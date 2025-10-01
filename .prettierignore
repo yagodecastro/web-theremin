@@ -1,0 +1,14 @@
+build
+node_modules
+dist
+coverage
+logs
+*.log
+.env*
+.DS_Store
+public/assets
+*.local
+auto-imports.d.ts
+components.d.ts
+*.md
+

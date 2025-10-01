@@ -1,0 +1,46 @@
+%%{
+  init: {
+    'sequence': {
+      'noteMargin': 20,
+      'actorMargin': 120,
+      'messageMargin': 90
+    }
+  }
+}%%
+sequenceDiagram
+    actor User as Usuário
+    participant App as UI Vue
+    participant AC as AppController
+    participant SO as ServiceOrchestrator
+    participant GS as GestureService
+    participant MS as MidiService
+    participant VS as VisualsService
+
+    User->>App: Clica Iniciar
+    App->>AC: start()
+    AC->>SO: start()
+    activate SO
+
+    loop Loop Processamento
+        SO->>GS: detectHands()
+        activate GS
+        GS-->>SO: handData
+        deactivate GS
+
+        SO->>GS: processGestures(handData)
+        activate GS
+        note over GS: Handlers Pinch/Modulation
+        GS->>MS: playNote, sendCC
+        GS->>VS: emitPinchBurst
+        deactivate GS
+    end
+
+    User->>App: Clica Parar
+    App->>AC: stop()
+    AC->>SO: stop()
+    deactivate SO
+    note over SO: Limpa loop e para gestos
+
+    AC->>GS: stop()
+    AC->>MS: stop()
+    AC->>VS: stop()

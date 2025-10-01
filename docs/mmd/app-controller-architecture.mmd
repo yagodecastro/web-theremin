@@ -1,0 +1,71 @@
+%% Arquitetura do núcleo da aplicação: AppController e ServiceOrchestrator
+%% com padrões de Dependency Injection e Mediator para coordenação dos serviços
+%%{
+  init: {
+    'themeVariables': {
+      'classPadding': 20,
+      'nodeSpacing': 100,
+      'rankSpacing': 100
+    }
+  }
+}%%
+classDiagram
+    class AppController {
+        -gestureService: IGestureService
+        -midiService: IMidiService
+        -visualsService: IVisualsService
+        -serviceOrchestrator: ServiceOrchestrator
+        +initialize()
+        +start()
+        +stop()
+        +detectDevices()
+    }
+
+    class ServiceOrchestrator {
+        -gestureService: IGestureService
+        -midiService: IMidiService
+        -visualsService: IVisualsService
+        +processLoop()
+        +coordinate()
+    }
+
+    class IGestureService {
+        <<Interface>>
+        +initialize()
+        +detectHands()
+        +processGestures()
+        +switchCamera()
+        +stopAllGestures()
+        +stop()
+    }
+
+    class GestureService {
+        -detector: GestureDetector
+        -processor: GestureProcessor
+        +initialize()
+        +detectHands()
+        +processGestures()
+        +switchCamera()
+        +stopAllGestures()
+        +stop()
+    }
+
+    class IMidiService {
+        <<Interface>>
+        +playNote()
+        +stopNote()
+        +sendCC()
+    }
+
+    class IVisualsService {
+        <<Interface>>
+        +emitPinchBurst()
+        +emitHandModulation()
+        +render()
+    }
+
+    AppController --> ServiceOrchestrator: inicializa/controla
+    ServiceOrchestrator --> IGestureService: coordena
+    ServiceOrchestrator --> IMidiService: coordena
+    ServiceOrchestrator --> IVisualsService: coordena
+    GestureService ..|> IGestureService: implementa

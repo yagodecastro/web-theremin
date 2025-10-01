@@ -1,0 +1,5 @@
+[*.mmd]
+indent_style = tab
+trim_trailing_whitespace = false
+insert_final_newline = false
+ij_formatter_enabled = false

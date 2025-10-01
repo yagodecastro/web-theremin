@@ -1,0 +1,49 @@
+{
+  "bpm": 120,
+  "gestures": [
+    {
+      "gesture": "Pinça Esquerda",
+      "attempts": 16,
+      "time_range_beats": { "start": 1, "end": 17 },
+      "expected_midi": {
+        "type": "note_on"
+      }
+    },
+    {
+      "gesture": "Abrir de mãos Esquerda",
+      "attempts": 16,
+      "time_range_beats": { "start": 33, "end": 49 },
+      "expected_midi": {
+        "type": "control_change",
+        "control": 1
+      }
+    },
+    {
+      "gesture": "Abrir de mãos Direita",
+      "attempts": 16,
+      "time_range_beats": { "start": 65, "end": 81 },
+      "expected_midi": {
+        "type": "control_change",
+        "control": 11
+      }
+    },
+    {
+      "gesture": "Abrir de mãos simultâneo - Mão Esquerda",
+      "attempts": 16,
+      "time_range_beats": { "start": 97, "end": 113 },
+      "expected_midi": {
+        "type": "control_change",
+        "control": 1
+      }
+    },
+    {
+      "gesture": "Abrir de mãos simultâneo - Mão Direita",
+      "attempts": 16,
+      "time_range_beats": { "start": 97, "end": 113 },
+      "expected_midi": {
+        "type": "control_change",
+        "control": 11
+      }
+    }
+  ]
+}

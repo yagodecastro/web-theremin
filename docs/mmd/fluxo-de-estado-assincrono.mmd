@@ -1,0 +1,41 @@
+%%{
+  init: {
+    'flowchart': {
+      'nodeSpacing': 100,
+      'rankSpacing': 150
+    }
+  }
+}%%
+flowchart TD
+    subgraph main["Fluxo Assíncrono: Inicialização de Dispositivos"]
+        direction TB
+        A["App.vue montado"] --> B
+        B["tryInitializeSystem chamado"]
+        B --> C["AppController criado"]
+        C --> D["appController.initialize chamado"]
+
+        subgraph async["Operação Assíncrona"]
+            direction TB
+            D --> E["detectAvailableDevices"]
+            E --> E1["WebMidi API"]
+            E --> E2["enumerateDevices API"]
+            E1 --> F
+            E2 --> F
+        end
+
+        F["Controller atualiza store"] --> G
+        G["Estado devices populado"] --> H
+        H["UI Controls.vue reativa"]
+    end
+
+    classDef trigger fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#000;
+    classDef controllerAction fill:#fffde7,stroke:#fbc02d,stroke-width:2px,color:#000;
+    classDef asyncOp fill:#fce4ec,stroke:#d81b60,stroke-width:2px,color:#000;
+    classDef storeUpdate fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#000;
+    classDef uiReaction fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000;
+
+    class A,B trigger;
+    class C,D,F controllerAction;
+    class E,E1,E2 asyncOp;
+    class G storeUpdate;
+    class H uiReaction;

@@ -1,0 +1,95 @@
+%%{
+  init: {
+    'class': {
+      'textColor': '#000',
+      'fontSize': '12px'
+    },
+    'themeVariables': {
+      'classPadding': 20,
+      'nodeSpacing': 100,
+      'rankSpacing': 100
+    }
+  }
+}%%
+classDiagram
+    direction TB
+
+    class GestureProcessor {
+        -handlers: GestureHandler[]
+        -frameCounter: number
+        -appConfig: AppConfig
+        -midiService: IMidiService
+        -visualsService: IVisualsService
+        +processGestures(handData)
+        -shouldProcessHandler(handler)
+        +stopAllGestures()
+    }
+
+    class BaseGestureHandler {
+        <<Abstract>>
+        +priority: HandlerPriority
+        +frameSkipInterval: number
+        #midiService: IMidiService
+        #visualsService: IVisualsService
+        #midiConfig: MidiConfig
+        #gestureConfig: GestureConfig
+        +process(handData)*
+        +stop() ?
+        #setPriorityConfig()
+        #getLandmarksByHand(handData, hand)
+    }
+
+    class PinchGestureHandler {
+        -pinchState: PinchState
+        +process(handData)
+        +stop()
+        -handlePinchStart(pinchData)
+        -handlePinchContinue(pinchData)
+        -handlePinchRelease()
+        -getCurrentMidiNote(position)
+        -createPinchBurstEffect(position, intensity)
+    }
+
+    class HandModulationHandler {
+        -lastValues: Map~string, object~
+        +process(handData)
+        -hasSignificantChange(landmarks, handName)
+        -processMidi(landmarks, handName, openness)
+        -sendMidiCC(cc, value)
+        -createHandVisualEffect(landmarks, openness, handName)
+    }
+
+    class IMidiService {
+        <<Interface>>
+        +playNote(x, y, intensity)
+        +stopNote(x, y)
+        +stopAllNotes()
+        +sendCC(controller, value)
+        +gestureToNote(x, y)
+    }
+
+    class IVisualsService {
+        <<Interface>>
+        +emitPinchBurst(options)
+        +emitHandModulation(options)
+    }
+
+    class GestureHandler {
+        <<Interface>>
+        +priority: HandlerPriority
+        +frameSkipInterval: number
+        +process(handData)
+        +stop() ?
+    }
+
+    GestureProcessor --> IMidiService
+    GestureProcessor --> IVisualsService
+    GestureProcessor --> GestureHandler
+    BaseGestureHandler ..|> GestureHandler
+    BaseGestureHandler --> IMidiService
+    BaseGestureHandler --> IVisualsService
+    PinchGestureHandler --|> BaseGestureHandler
+    HandModulationHandler --|> BaseGestureHandler
+    note for PinchGestureHandler "Detecta pinça na mão esquerda e controla notas MIDI"
+    note for HandModulationHandler "Mapeia posição e abertura das mãos para Control Changes MIDI"
+

@@ -1,0 +1,119 @@
+@import 'tailwindcss';
+
+@theme {
+    /* Font Families */
+    --font-retro: 'Courier Prime', 'Courier New', 'Courier', 'monospace';
+    --font-display: 'Special Elite', 'Courier Prime', 'Courier New', 'monospace';
+    --font-mono: 'Courier Prime', 'Courier New', 'Courier', 'monospace';
+    --font-typewriter: 'Special Elite', 'Courier Prime', 'American Typewriter', 'Courier New', 'monospace';
+
+    /* Neon Colors */
+    --color-neon-green: #00ff41;
+    --color-neon-amber: #ffbf00;
+    --color-neon-cyan: #00ffff;
+    --color-neon-pink: #ff007f;
+    --color-neon-red: #ff073a;
+
+    /* Retro Colors */
+    --color-retro-black: #0a0a0a;
+    --color-retro-gray-900: #121212;
+    --color-retro-gray-800: #1a1a1a;
+    --color-retro-gray-700: #2a2a2a;
+    --color-retro-gray-600: #3a3a3a;
+    --color-retro-gray-500: #4a4a4a;
+    --color-retro-metal: #8e8e93;
+    --color-retro-blue: #001122;
+    --color-retro-purple: #4a0e4e;
+
+    /* LED Colors */
+    --color-led-green: #00ff41;
+    --color-led-red: #ff073a;
+    --color-led-amber: #ffbf00;
+    --color-led-blue: #0099ff;
+    --color-led-off: #333333;
+
+    /* Chrome Colors */
+    --color-chrome-light: #e8e8e8;
+    --color-chrome-medium: #bcbcbc;
+    --color-chrome-dark: #8e8e8e;
+
+    /* Box Shadows */
+    --shadow-neon-green: 0 0 5px #00ff41, 0 0 10px #00ff41, 0 0 20px #00ff41;
+    --shadow-neon-amber: 0 0 5px #ffbf00, 0 0 10px #ffbf00, 0 0 20px #ffbf00;
+    --shadow-neon-red: 0 0 5px #ff073a, 0 0 10px #ff073a, 0 0 20px #ff073a;
+    --shadow-neon-pink: 0 0 5px #ff007f, 0 0 10px #ff007f, 0 0 20px #ff007f;
+    --shadow-neon-cyan: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 20px #00ffff;
+    --shadow-inset-metal: inset 2px 2px 4px rgba(255, 255, 255, 0.1), inset -2px -2px 4px rgba(0, 0, 0, 0.5);
+    --shadow-bevel: 2px 2px 4px rgba(0, 0, 0, 0.5), -1px -1px 2px rgba(255, 255, 255, 0.1);
+    --shadow-led-on: 0 0 8px currentColor, inset 0 0 4px rgba(255, 255, 255, 0.2);
+    --shadow-crt: 0 0 20px rgba(0, 255, 65, 0.3), 0 0 40px rgba(0, 255, 65, 0.1);
+
+    /* Background Images */
+    --gradient-metal: linear-gradient(145deg, #e8e8e8, #8e8e8e);
+    --gradient-dark-metal: linear-gradient(145deg, #3a3a3a, #1a1a1a);
+    --gradient-neon-grid: radial-gradient(
+            circle at 1px 1px,
+            rgba(0, 255, 65, 0.3) 1px,
+            transparent 0
+    );
+    --gradient-crt-lines: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0, 255, 65, 0.03) 2px,
+            rgba(0, 255, 65, 0.03) 4px
+    );
+    --gradient-radial: radial-gradient(circle, var(--tw-gradient-stops));
+
+    /* Background Sizes */
+    --size-grid: 20px 20px;
+    --size-lines: 100% 4px;
+
+    /* Animations */
+    --animate-pulse-neon: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    --animate-glow: glow 2s ease-in-out infinite alternate;
+    --animate-scan: scan 2s linear infinite;
+    --animate-flicker: flicker 0.15s infinite linear;
+}
+
+/* Keyframes */
+@keyframes glow {
+    from {
+        opacity: 0.7;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scan {
+    0% {
+        transform: translateY(-100%);
+    }
+    100% {
+        transform: translateY(100vh);
+    }
+}
+
+@keyframes flicker {
+    0%,
+    19.999%,
+    22%,
+    62.999%,
+    64%,
+    64.999%,
+    70%,
+    100% {
+        opacity: 0.99;
+        filter: drop-shadow(0 0 1px currentColor);
+    }
+    20%,
+    21.999%,
+    63%,
+    63.999%,
+    65%,
+    69.999% {
+        opacity: 0.4;
+        filter: none;
+    }
+}

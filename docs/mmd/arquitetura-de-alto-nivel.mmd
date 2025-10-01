@@ -1,0 +1,53 @@
+%%{
+  init: {
+    'flowchart': {
+      'padding': 10,
+      'nodeSpacing': 50,
+      'rankSpacing': 60
+    }
+  }
+}%%
+flowchart TB
+    subgraph interface["Interface do Usuário - Vue 3"]
+        direction LR
+        C["Componentes UI"]
+        S["Estado Global Pinia"]
+    end
+
+    subgraph core["Núcleo da Aplicação"]
+        direction TB
+        AC["AppController"]
+        SO["ServiceOrchestrator"]
+    end
+
+    subgraph services["Serviços de Domínio"]
+        direction LR
+        GS["GestureService<br/><small>(Detector + Processor)</small>"]
+        MS["MidiService"]
+        VS["VisualsService"]
+    end
+
+    subgraph external["APIs e Bibliotecas Externas"]
+        direction LR
+        MP["MediaPipe"]
+        WMA["Web MIDI API"]
+        PJS["PixiJS"]
+    end
+
+    C -- Interage --> S
+    S -- Dispara ações --> AC
+    AC -->|Inicia| SO
+    SO -->|Coordena| GS
+    SO -->|Coordena| MS
+    SO -->|Coordena| VS
+    GS -->|Usa| MP
+    MS -->|Usa| WMA
+    VS -->|Usa| PJS
+    classDef ui fill: #c8e6c9, stroke: #2e7d32, stroke-width:2px, color:#000
+    classDef coreStyle fill: #bbdefb, stroke: #1565c0, stroke-width:2px, color:#000
+    classDef servicesStyle fill: #fff9c4, stroke: #f57f17, stroke-width:2px, color:#000
+    classDef externalStyle fill: #fce4ec, stroke: #ad1457, stroke-width:2px, color:#000
+    class C,S ui
+    class AC,SO coreStyle
+    class GS,MS,VS servicesStyle
+    class MP,WMA,PJS externalStyle

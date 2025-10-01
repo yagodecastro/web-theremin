@@ -1,0 +1,37 @@
+%%{
+  init: {
+    'flowchart': {
+      'nodeSpacing': 50,
+      'rankSpacing': 50
+    }
+  }
+}%%
+flowchart TB
+    subgraph main["Fluxo de Ação Direta: Seleção de Saída MIDI"]
+        direction TB
+        A["Usuário seleciona dispositivo MIDI"] --> B
+        B["Handler de evento Controls.vue"] --> B1
+        B --> B2
+
+        subgraph store["Atualização de Estado - Pinia"]
+            direction TB
+            B1["store.selectMidiOutput"] --> C["Estado selectedMidiOutput atualizado"]
+        end
+
+        subgraph core["Ação no Núcleo da Aplicação"]
+            direction TB
+            B2["store.appSystem.connectMidi"] --> D["AppController.connectMidi"]
+            D --> E["midiService.connect"]
+            E --> F["Conexão com dispositivo MIDI estabelecida"]
+        end
+    end
+
+    classDef userAction fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#000;
+    classDef componentAction fill:#ede7f6,stroke:#5e35b1,stroke-width:2px,color:#000;
+    classDef storeUpdate fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#000;
+    classDef controllerAction fill:#fffde7,stroke:#fbc02d,stroke-width:2px,color:#000;
+
+    class A userAction;
+    class B componentAction;
+    class B1,C storeUpdate;
+    class B2,D,E,F controllerAction;

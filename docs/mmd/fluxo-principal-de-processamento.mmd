@@ -1,0 +1,42 @@
+%%{
+  init: {
+    'flowchart': {
+      'nodeSpacing': 100,
+      'rankSpacing': 150
+    }
+  }
+}%%
+graph TD
+    subgraph input["Entrada e Processamento"]
+        direction TB
+        A["Captura Webcam"] --> B["Detecção Mão MediaPipe"]
+        B --> C["Extração HandLandmarker"]
+        C --> D["GestureService"]
+        D --> E["PinchHandler"]
+        D --> F["ModulationHandler"]
+    end
+
+    subgraph output["Saída e Renderização"]
+        direction TB
+        I["MidiService"]
+        L["VisualsService"]
+        M["Web MIDI API"]
+        N["PixiJS Canvas"]
+    end
+
+    E --> I
+    F --> I
+    E --> L
+    F --> L
+    I --> M
+    L --> N
+
+    classDef capture fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000;
+    classDef processing fill:#fff9c4,stroke:#f9a825,stroke-width:2px,color:#000;
+    classDef outputService fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:#000;
+    classDef finalDest fill:#d1c4e9,stroke:#4527a0,stroke-width:2px,color:#000;
+
+    class A capture;
+    class B,C,D,E,F processing;
+    class I,L outputService;
+    class M,N finalDest;

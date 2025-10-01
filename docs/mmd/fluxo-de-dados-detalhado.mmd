@@ -1,0 +1,49 @@
+%%{
+  init: {
+    'flowchart': {
+      'nodeSpacing': 100,
+      'rankSpacing': 150
+    }
+  }
+}%%
+graph TD
+    A["Frame Webcam"]
+
+    subgraph processing["Núcleo e Processamento"]
+        SO["ServiceOrchestrator"]
+        GS["GestureService"]
+        H1["PinchHandler"]
+        H2["ModulationHandler"]
+    end
+
+    subgraph services["Serviços Saída"]
+        E["MidiService"]
+        F["VisualsService"]
+    end
+
+    subgraph results["Resultados Finais"]
+        G["Mensagens MIDI"]
+        H["Feedback Visual"]
+    end
+
+    A --> GS
+    GS --> SO
+    SO --> GS
+    GS --> H1
+    GS --> H2
+    H1 -->|Nota| E
+    H2 -->|CC| E
+    E --> G
+    H1 -->|Burst| F
+    H2 -->|Trail| F
+    F --> H
+    classDef sourceStyle fill:#e0f7fa,stroke:#006064,stroke-width:2px,color:#000
+    classDef coreStyle fill:#bbdefb,stroke:#1565c0,stroke-width:2px,color:#000
+    classDef gestureStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000
+    classDef outputStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    classDef resultStyle fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px,color:#000
+    class A sourceStyle
+    class SO coreStyle
+    class GS,H1,H2 gestureStyle
+    class E,F outputStyle
+    class G,H resultStyle
