@@ -87,6 +87,11 @@ export class AppController {
     this.midiService.setScale(scaleName)
   }
 
+  /** @description Define a nota base (tônica) para a geração de notas. */
+  setRootNote(note: string): void {
+    this.midiService.setRootNote(note)
+  }
+
   /** @description Define a oitava base para a geração de notas. */
   setBaseOctave(octave: number): void {
     this.midiService.setBaseOctave(octave)

@@ -48,6 +48,7 @@ const midiConfig: MidiConfig = {
   maxValue: 127,
   channel: 1,
   baseOctave: 3,
+  rootNote: 'C',
   scale: 'whole tone'
 } as const
 

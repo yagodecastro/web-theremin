@@ -4,10 +4,11 @@ import { Note as TonalNote, Range, Scale } from 'tonal'
 export function generateMidiScale(
   scaleName: string,
   baseOctave: number,
+  rootNote: string = 'C',
   range: number = 12
 ): (number | null)[] {
   try {
-    const scaleFullName = `C${baseOctave} ${scaleName}`
+    const scaleFullName = `${rootNote}${baseOctave} ${scaleName}`
     const scale = Scale.get(scaleFullName)
     if (!scale.notes || scale.notes.length === 0) {
       throw new Error(`Escala inválida: ${scaleFullName}`)
@@ -21,7 +22,7 @@ export function generateMidiScale(
     return midiNotes
   } catch (error) {
     console.error(`Erro ao gerar escala MIDI para "${scaleName}", usando fallback.`, error)
-    const fallbackScale = Scale.get(`C${baseOctave} major`)
+    const fallbackScale = Scale.get(`${rootNote}${baseOctave} major`)
     const notes = Range.numeric([-12, 12]).map(Scale.steps(fallbackScale.name))
     return notes.map(note => TonalNote.get(note).midi)
   }

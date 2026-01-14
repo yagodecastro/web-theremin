@@ -17,12 +17,57 @@ const cameraOptions = computed(() =>
   }))
 )
 
+const scaleOptions = computed(() =>
+  store.musicalConfig.availableScales.map(scale => ({
+    value: scale,
+    label: scale.toUpperCase()
+  }))
+)
+
+const noteOptions = computed(() =>
+  store.musicalConfig.availableNotes.map(note => ({
+    value: note,
+    label: note
+  }))
+)
+
+const octaveOptions = computed(() =>
+  Array.from({ length: 7 }, (_, i) => i + 1).map(oct => ({
+    value: String(oct),
+    label: `OCTAVE ${oct}`
+  }))
+)
+
 const emit = defineEmits(['start', 'stop', 'restart', 'recovery', 'panic', 'full-restart'])
 </script>
 
 <template>
   <div class="grid grid-cols-1 md:grid-cols-2 md:justify-between gap-8">
-    <div class="grid grid-cols-1 md:grid-cols-2 md:col-span-2 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <LabeledSelect
+        :model-value="store.musicalConfig.rootNote"
+        :options="noteOptions"
+        :disabled="store.isBusy"
+        label="KEY"
+        variant="amber"
+        @update:model-value="value => store.selectRootNote(value)"
+      />
+      <LabeledSelect
+        :model-value="store.musicalConfig.selectedScale"
+        :options="scaleOptions"
+        :disabled="store.isBusy"
+        label="SCALE"
+        variant="amber"
+        @update:model-value="value => store.selectScale(value)"
+      />
+      <LabeledSelect
+        :model-value="String(store.musicalConfig.baseOctave)"
+        :options="octaveOptions"
+        :disabled="store.isBusy"
+        label="OCTAVE"
+        variant="amber"
+        @update:model-value="value => store.setBaseOctave(Number(value))"
+      />
       <LabeledSelect
         :model-value="store.devices.midi.selectedMidiOutput"
         :options="midiOutputOptions"

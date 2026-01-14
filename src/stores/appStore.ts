@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
-import { Scale } from 'tonal'
 import type { AppController } from '@/app/core'
 import { LogType } from 'vite'
 import { VisualEffect } from '@/app/domains/visuals'
@@ -43,9 +42,35 @@ export const useAppStore = defineStore('appStore', () => {
     }
   })
   const musicalConfig = ref({
-    selectedScale: 'C major',
+    selectedScale: 'major',
+    rootNote: 'C',
     baseOctave: 4,
-    availableScales: Scale.names()
+    availableScales: [
+      'major',
+      'minor',
+      'major pentatonic',
+      'minor pentatonic',
+      'blues',
+      'major blues',
+      'minor blues',
+      'whole tone',
+      'chromatic',
+      'dorian',
+      'phrygian',
+      'lydian',
+      'mixolydian',
+      'locrian',
+      'harmonic minor',
+      'melodic minor',
+      'augmented',
+      'diminished',
+      'hirajoshi',
+      'iwato',
+      'kumoi',
+      'pelog',
+      'prometheus'
+    ],
+    availableNotes: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
   })
   const systemLogs = ref<LogEntry[]>([])
   const visualEffects = ref<VisualEffect[]>([])
@@ -171,10 +196,23 @@ export const useAppStore = defineStore('appStore', () => {
   /** @description Seleciona uma escala musical. */
   const selectScale = (scaleName: string) => {
     musicalConfig.value.selectedScale = scaleName
+    if (appSystem.value) {
+      appSystem.value.setScale(scaleName)
+    }
+  }
+  /** @description Seleciona a nota base (tônica). */
+  const selectRootNote = (note: string) => {
+    musicalConfig.value.rootNote = note
+    if (appSystem.value) {
+      appSystem.value.setRootNote(note)
+    }
   }
   /** @description Define a oitava base. */
   const setBaseOctave = (octave: number) => {
     musicalConfig.value.baseOctave = octave
+    if (appSystem.value) {
+      appSystem.value.setBaseOctave(octave)
+    }
   }
   /** @description Alterna a visibilidade da câmera. */
   const toggleCamera = () => {
@@ -220,6 +258,7 @@ export const useAppStore = defineStore('appStore', () => {
     selectMidiOutput,
     selectCamera,
     selectScale,
+    selectRootNote,
     setBaseOctave,
     toggleCamera,
     addDebugInfo
