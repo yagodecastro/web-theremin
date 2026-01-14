@@ -183,6 +183,10 @@ export const useAppStore = defineStore('appStore', () => {
   }
   /** @description Alterna entre o modo MIDI e o modo Sintetizador. */
   const toggleSynthMode = () => {
+    // Para todas as notas antes de trocar de modo para evitar notas presas
+    if (appSystem.value) {
+      appSystem.value.panicMidi()
+    }
     isSynthMode.value = !isSynthMode.value
   }
 

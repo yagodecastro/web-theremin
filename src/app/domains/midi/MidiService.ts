@@ -150,11 +150,25 @@ export class MidiService implements IMidiService {
 
   /** @description Envia uma mensagem de Control Change (CC). */
   sendCC(controller: number, value: number): void {
-    // Ignora CC no modo Synth por enquanto
-    if (this.store.isSynthMode) return
+    const midiValue = Math.max(0, Math.min(127, Math.floor(value)))
+
+    // Mapeamento de gestos para modulação do sintetizador
+    if (this.store.isSynthMode) {
+      switch (controller) {
+        case 11: // Right Hand Openness -> Volume
+          this.synthService.setVolume(midiValue)
+          break
+        case 71: // Left Hand Y -> Filter Frequency (Timbre)
+          this.synthService.setFilterFrequency(midiValue)
+          break
+        case 1: // Left Hand Openness -> Vibrato Amount
+          this.synthService.setVibratoAmount(midiValue)
+          break
+      }
+      return
+    }
 
     if (this.output) {
-      const midiValue = Math.max(0, Math.min(127, Math.floor(value)))
       this.output.sendControlChange(controller, midiValue, { channels: this.config.channel })
     }
   }
