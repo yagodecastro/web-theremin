@@ -55,6 +55,8 @@ export class AppController {
       this.store.addSystemLog('error', 'Sistema não está pronto para iniciar.')
       return
     }
+    // Garante que o contexto de áudio (para o synth) seja iniciado a partir de uma interação do usuário
+    await this.midiService.ensureAudioContext()
     this.serviceOrchestrator.start()
   }
 
@@ -115,7 +117,7 @@ export class AppController {
 
   /** @description Configura e retorna o serviço MIDI. */
   private setupMidiService = (): IMidiService => {
-    return new MidiService(this.config.domains.midi)
+    return new MidiService(this.config.domains.midi, this.store)
   }
 
   /** @description Configura e retorna o serviço de visuais. */

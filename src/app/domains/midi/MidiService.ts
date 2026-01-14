@@ -3,6 +3,8 @@ import { Note as TonalNote } from 'tonal'
 import { generateMidiScale } from '@/app/shared/utils/musicTheoryUtils.ts'
 import { IMidiService } from '@/app/domains/midi/IMidiService.ts'
 import { MidiConfig } from '@/app/domains/midi/index.ts'
+import { SynthService } from '@/app/domains/audio/SynthService.ts'
+import { AppStore } from '@/stores/appStore.ts'
 
 /** @description Serviço MIDI que converte gestos em notas musicais usando teoria musical. */
 export class MidiService implements IMidiService {
@@ -10,9 +12,14 @@ export class MidiService implements IMidiService {
   private isConnected = false
   private activeNotes: Set<number> = new Set()
   private midiScale: (number | null)[] = []
+  private synthService: SynthService
 
-  constructor(private config: MidiConfig) {
+  constructor(
+    private config: MidiConfig,
+    private store: AppStore
+  ) {
     this.updateScale()
+    this.synthService = new SynthService()
   }
 
   /** @description Habilita a API WebMIDI no navegador. */
@@ -50,11 +57,20 @@ export class MidiService implements IMidiService {
     return { note: this.midiScale[noteIndex], velocity, noteValue }
   }
 
-  /** @description Toca uma nota MIDI. */
+  /** @description Toca uma nota MIDI ou Synth. */
   playNote(gestureX: number, gestureY: number, intensity: number = 1): void {
-    if (!this.isConnected || !this.output) return
     const { note, velocity } = this.gestureToNote(gestureX, gestureY)
     const finalVelocity = Math.floor(velocity * intensity)
+
+    if (this.store.isSynthMode) {
+      if (note != null) {
+        this.synthService.playNote(note, finalVelocity)
+        this.activeNotes.add(note)
+      }
+      return
+    }
+
+    if (!this.isConnected || !this.output) return
     try {
       const midiNote = new Note(note ?? 'C4')
       this.output.sendNoteOn(midiNote, {
@@ -69,11 +85,18 @@ export class MidiService implements IMidiService {
     }
   }
 
-  /** @description Para uma nota MIDI específica. */
+  /** @description Para uma nota MIDI ou Synth específica. */
   stopNote(gestureX: number, gestureY: number): void {
-    if (!this.isConnected || !this.output) return
     const { note } = this.gestureToNote(gestureX, gestureY)
     if (note === null || !this.activeNotes.has(note)) return
+
+    if (this.store.isSynthMode) {
+      this.synthService.stopNote(note)
+      this.activeNotes.delete(note)
+      return
+    }
+
+    if (!this.isConnected || !this.output) return
     try {
       const midiNote = new Note(note ?? 'C4')
       this.output.sendNoteOff(midiNote, {
@@ -85,9 +108,14 @@ export class MidiService implements IMidiService {
     }
   }
 
-  /** @description Para todas as notas MIDI ativas. */
+  /** @description Para todas as notas ativas. */
   stopAllNotes(): void {
-    if (!this.isConnected || !this.output) return
+    this.synthService.stopAll()
+
+    if (!this.isConnected || !this.output) {
+      this.activeNotes.clear()
+      return
+    }
     try {
       this.output.sendAllNotesOff()
       this.activeNotes.clear()
@@ -98,8 +126,10 @@ export class MidiService implements IMidiService {
 
   /** @description Envia comandos de pânico para parar todo o som imediatamente. */
   panicStop(): void {
+    this.synthService.stopAll()
+
     if (!this.isConnected || !this.output) {
-      console.warn('MIDI não conectado - panic stop ignorado')
+      console.warn('MIDI não conectado - panic stop ignorado para MIDI')
       return
     }
     try {
@@ -113,8 +143,16 @@ export class MidiService implements IMidiService {
     }
   }
 
+  /** @description Garante que o contexto de áudio esteja inicializado. */
+  async ensureAudioContext(): Promise<void> {
+    await this.synthService.ensureAudioContext()
+  }
+
   /** @description Envia uma mensagem de Control Change (CC). */
   sendCC(controller: number, value: number): void {
+    // Ignora CC no modo Synth por enquanto
+    if (this.store.isSynthMode) return
+
     if (this.output) {
       const midiValue = Math.max(0, Math.min(127, Math.floor(value)))
       this.output.sendControlChange(controller, midiValue, { channels: this.config.channel })
@@ -140,6 +178,13 @@ export class MidiService implements IMidiService {
 
   /** @description Testa a conexão MIDI tocando uma nota. */
   testConnection(): void {
+    // Se estiver em modo synth, toca uma nota no synth
+    if (this.store.isSynthMode) {
+      this.synthService.playNote(60, 100) // C4
+      setTimeout(() => this.synthService.stopNote(60), 1000)
+      return
+    }
+
     if (!this.isConnected) {
       return
     }

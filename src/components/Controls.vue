@@ -95,8 +95,13 @@ const emit = defineEmits(['start', 'stop', 'restart', 'recovery', 'panic', 'full
         @click="store.toggleCamera"
       />
       <ActionButton
-        :disabled="!store.devices.midi.selectedMidiOutput"
-        label="TEST MIDI"
+        :label="store.isSynthMode ? 'MODE: SYNTH' : 'MODE: MIDI'"
+        variant="warning"
+        @click="store.toggleSynthMode"
+      />
+      <ActionButton
+        :disabled="!store.devices.midi.selectedMidiOutput && !store.isSynthMode"
+        label="TEST"
         variant="secondary"
         @click="() => store.appSystem?.testMidi()"
       />

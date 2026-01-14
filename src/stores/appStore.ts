@@ -28,6 +28,7 @@ export const useAppStore = defineStore('appStore', () => {
   const appSystem = ref<AppController | null>(null)
   const status = ref<AppStatus>('idle')
   const error = ref<string | null>(null)
+  const isSynthMode = ref(false)
   const gestureActive = ref(false)
   const lastGesturePosition = ref<{ x: number; y: number } | null>(null)
   const showCamera = ref(false)
@@ -180,6 +181,11 @@ export const useAppStore = defineStore('appStore', () => {
   const toggleCamera = () => {
     showCamera.value = !showCamera.value
   }
+  /** @description Alterna entre o modo MIDI e o modo Sintetizador. */
+  const toggleSynthMode = () => {
+    isSynthMode.value = !isSynthMode.value
+  }
+
   /** @description Adiciona ou atualiza uma informação de debug. */
   const addDebugInfo = (key: string, value: string | undefined) => {
     const index = debugInfoValue.findIndex(item => item.key === key)
@@ -194,6 +200,7 @@ export const useAppStore = defineStore('appStore', () => {
     appSystem,
     status,
     error,
+    isSynthMode,
     gestureActive,
     lastGesturePosition,
     showCamera,
@@ -222,6 +229,7 @@ export const useAppStore = defineStore('appStore', () => {
     selectScale,
     setBaseOctave,
     toggleCamera,
+    toggleSynthMode,
     addDebugInfo
   }
 })

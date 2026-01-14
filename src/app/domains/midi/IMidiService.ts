@@ -22,4 +22,6 @@ export interface IMidiService {
   testConnection(): void
   /** @description Envia um comando de pânico para parar todo o som. */
   panicStop(): void
+  /** @description Garante que o contexto de áudio esteja inicializado. */
+  ensureAudioContext(): Promise<void>
 }
