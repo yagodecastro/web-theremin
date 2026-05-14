@@ -17,13 +17,40 @@ const cameraOptions = computed(() =>
   }))
 )
 
-const emit = defineEmits(['start', 'stop', 'restart', 'recovery', 'panic', 'full-restart'])
+const emit = defineEmits<{
+  start: []
+  stop: []
+  restart: []
+  recovery: []
+  panic: []
+  'full-restart': []
+  'switch-audio-mode': [mode: 'tone' | 'midi']
+}>()
+
+const handleStartClick = () => {
+  if (store.hasError) emit('full-restart')
+  else if (store.isRunning) emit('restart')
+  else emit('start')
+}
+
+const toggleAudioMode = () => {
+  const next = store.audioMode === 'tone' ? 'midi' : 'tone'
+  store.setAudioMode(next)
+  emit('switch-audio-mode', next)
+}
 </script>
 
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-2 md:justify-between gap-8">
-    <div class="grid grid-cols-1 md:grid-cols-2 md:col-span-2 gap-4">
+  <div class="grid grid-cols-1 md:grid-cols-2 md:justify-between gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 md:col-span-2 gap-3">
+      <ActionButton
+        :label="store.audioMode === 'tone' ? 'TONE.JS' : 'MIDI'"
+        :variant="store.audioMode === 'tone' ? 'primary' : 'warning'"
+        :disabled="store.isBusy"
+        @click="toggleAudioMode"
+      />
       <LabeledSelect
+        v-if="store.audioMode === 'midi'"
         :model-value="store.devices.midi.selectedMidiOutput"
         :options="midiOutputOptions"
         :disabled="store.isBusy"
@@ -36,6 +63,12 @@ const emit = defineEmits(['start', 'stop', 'restart', 'recovery', 'panic', 'full
           }
         "
       />
+      <div
+        v-else
+        class="flex items-center px-3 py-1 rounded border border-neon-cyan/30 text-neon-cyan/60 text-xs font-typewriter uppercase tracking-wider"
+      >
+        DIRECT BROWSER AUDIO
+      </div>
       <LabeledSelect
         :model-value="store.devices.webcam.selectedCamera"
         :options="cameraOptions"
@@ -52,7 +85,6 @@ const emit = defineEmits(['start', 'stop', 'restart', 'recovery', 'panic', 'full
             } catch (error) {
               const errorMessage = error instanceof Error ? error.message : String(error)
               store.addSystemLog('error', `Falha ao trocar câmera: ${errorMessage}`)
-              // Reverte seleção se houve erro
               const currentCamera = store.devices.webcam.availableCameras.find(
                 cam => cam.deviceId === store.devices.webcam.selectedCamera
               )
@@ -69,7 +101,7 @@ const emit = defineEmits(['start', 'stop', 'restart', 'recovery', 'panic', 'full
         :disabled="store.isBusy && !store.hasError"
         :label="store.hasError ? 'RESTART SYSTEM' : 'START'"
         :variant="store.hasError ? 'warning' : store.isRunning ? 'secondary' : 'primary'"
-        @click="store.hasError ? emit('full-restart') : emit(store.isRunning ? 'restart' : 'start')"
+        @click="handleStartClick"
       />
       <ActionButton
         :disabled="!store.isRunning || store.isBusy"
@@ -84,7 +116,7 @@ const emit = defineEmits(['start', 'stop', 'restart', 'recovery', 'panic', 'full
         @click="emit('recovery')"
       />
       <ActionButton
-        :disabled="!store.devices.midi.selectedMidiOutput"
+        :disabled="store.audioMode === 'midi' && !store.devices.midi.selectedMidiOutput"
         label="PANIC"
         variant="danger"
         @click="emit('panic')"
@@ -95,8 +127,8 @@ const emit = defineEmits(['start', 'stop', 'restart', 'recovery', 'panic', 'full
         @click="store.toggleCamera"
       />
       <ActionButton
-        :disabled="!store.devices.midi.selectedMidiOutput"
-        label="TEST MIDI"
+        :disabled="store.audioMode === 'midi' && !store.devices.midi.selectedMidiOutput"
+        :label="store.audioMode === 'tone' ? 'TEST AUDIO' : 'TEST MIDI'"
         variant="secondary"
         @click="() => store.appSystem?.testMidi()"
       />

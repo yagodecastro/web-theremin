@@ -1,4 +1,5 @@
 import { MidiService } from '@/app/domains/midi/MidiService'
+import { ToneService } from '@/app/domains/tone/ToneService'
 import { VisualsService } from '@/app/domains/visuals/VisualsService'
 import { GestureService } from '@/app/domains/gesture'
 import { ServiceOrchestrator } from '@/app/core/ServiceOrchestrator'
@@ -12,15 +13,16 @@ import { LogType } from 'vite'
 
 /** @description Controla o ciclo de vida e o fluxo de dados central da aplicação. */
 export class AppController {
-  private readonly gestureService: IGestureService
-  private readonly midiService: IMidiService
+  private gestureService: IGestureService
+  private midiService: IMidiService
   private readonly visualsService: IVisualsService
-  private readonly serviceOrchestrator: ServiceOrchestrator
+  private serviceOrchestrator: ServiceOrchestrator
 
   /** @description Constrói o AppController com suas dependências. */
   constructor(
     private config: AppConfig = defaultConfig,
-    private store: AppStore
+    private store: AppStore,
+    private audioMode: 'tone' | 'midi' = 'tone'
   ) {
     this.midiService = this.setupMidiService()
     this.visualsService = this.setupVisualsService()
@@ -49,6 +51,25 @@ export class AppController {
     }
   }
 
+  /** @description Troca o modo de áudio em runtime, recriando o serviço de áudio. */
+  async switchAudioMode(mode: 'tone' | 'midi'): Promise<void> {
+    if (mode === this.audioMode) return
+    const wasRunning = this.store.isRunning
+    if (wasRunning) this.serviceOrchestrator.stop()
+    await this.midiService.stop()
+    this.audioMode = mode
+    this.store.setAudioMode(mode)
+    this.midiService = this.setupMidiService()
+    this.gestureService.updateMidiService(this.midiService)
+    this.serviceOrchestrator = this.setupServiceOrchestrator()
+    if (mode === 'midi') {
+      const devices = await this.detectAvailableDevices()
+      this.store.setMidiOutputs(devices.midiOutputs)
+    }
+    await this.connectMidi()
+    if (wasRunning) this.serviceOrchestrator.start()
+  }
+
   /** @description Inicia o loop de processamento principal da aplicação. */
   async start(): Promise<void> {
     if (this.store.status !== 'ready') {
@@ -73,12 +94,16 @@ export class AppController {
     ])
   }
 
-  /** @description Conecta a um dispositivo de saída MIDI. */
+  /** @description Conecta ao dispositivo de áudio (MIDI externo ou AudioContext). */
   async connectMidi(deviceName?: string): Promise<void> {
     try {
       await this.midiService.connect(deviceName)
     } catch (error) {
-      this.handleError(error, 'error', 'Erro ao conectar MIDI')
+      if (this.audioMode === 'midi') {
+        this.handleError(error, 'error', 'Erro ao conectar MIDI')
+      } else {
+        this.store.addSystemLog('warn', 'Erro ao inicializar AudioContext — aguardando interação do usuário')
+      }
     }
   }
 
@@ -113,8 +138,11 @@ export class AppController {
     return new GestureService(this.config, this.midiService, this.visualsService, this.store)
   }
 
-  /** @description Configura e retorna o serviço MIDI. */
+  /** @description Configura e retorna o serviço de áudio conforme o modo ativo. */
   private setupMidiService = (): IMidiService => {
+    if (this.audioMode === 'tone') {
+      return new ToneService(this.config.domains.midi)
+    }
     return new MidiService(this.config.domains.midi)
   }
 
@@ -145,10 +173,13 @@ export class AppController {
     cameras: Array<{ deviceId: string; label: string }>
   }> {
     try {
-      await MidiService.enableWebMidi()
-      const midiOutputs = MidiService.getAvailableOutputs().map(output => output.name)
       const cameras = await GestureService.getAvailableCameras()
-      return { midiOutputs, cameras }
+      if (this.audioMode === 'midi') {
+        await MidiService.enableWebMidi()
+        const midiOutputs = MidiService.getAvailableOutputs().map(output => output.name)
+        return { midiOutputs, cameras }
+      }
+      return { midiOutputs: [], cameras }
     } catch (error) {
       this.handleError(error, 'error', 'Erro ao detectar dispositivos')
       throw error

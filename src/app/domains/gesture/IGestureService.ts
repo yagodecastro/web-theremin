@@ -1,4 +1,5 @@
 import { HandLandmarkerResult } from '@mediapipe/tasks-vision'
+import { IMidiService } from '@/app/domains/midi/IMidiService'
 
 /** @description Interface para o serviço de gestos unificado. */
 export interface IGestureService {
@@ -14,6 +15,8 @@ export interface IGestureService {
   setHealthCheckCallback(callback: (error: Error) => void): void
   /** @description Para todos os gestos e reseta o estado dos manipuladores. */
   stopAllGestures(): void
+  /** @description Substitui o serviço de áudio nos handlers de gestos. */
+  updateMidiService(midiService: IMidiService): void
   /** @description Para o serviço de gestos. */
   stop(): Promise<void>
 }

@@ -1,5 +1,5 @@
 <template>
-  <details class="group bg-dark-metal border-2 border-retro-gray-600 rounded-lg shadow-bevel">
+  <details open class="group bg-dark-metal border-2 border-retro-gray-600 rounded-lg shadow-bevel">
     <summary
       class="p-4 cursor-pointer select-none hover:bg-retro-gray-700 transition-colors text-neon-pink font-typewriter font-bold text-lg uppercase tracking-wider"
     >

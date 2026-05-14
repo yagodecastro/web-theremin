@@ -28,6 +28,7 @@ export const useAppStore = defineStore('appStore', () => {
   const appSystem = ref<AppController | null>(null)
   const status = ref<AppStatus>('idle')
   const error = ref<string | null>(null)
+  const audioMode = ref<'tone' | 'midi'>('tone')
   const gestureActive = ref(false)
   const lastGesturePosition = ref<{ x: number; y: number } | null>(null)
   const showCamera = ref(false)
@@ -52,10 +53,12 @@ export const useAppStore = defineStore('appStore', () => {
   let logIdCounter = 0
 
   const isReady = computed(() => {
+    const hasMidi =
+      audioMode.value === 'midi' ? devices.value.midi.availableMidiOutputs.length > 0 : true
     return (
       status.value === 'ready' &&
       appSystem.value !== null &&
-      devices.value.midi.availableMidiOutputs.length > 0 &&
+      hasMidi &&
       devices.value.webcam.availableCameras.length > 0
     )
   })
@@ -67,7 +70,8 @@ export const useAppStore = defineStore('appStore', () => {
     if (hasError.value) return 'error'
     if (isBusy.value) return 'busy'
     if (!appSystem.value) return 'not_initialized'
-    if (devices.value.midi.availableMidiOutputs.length === 0) return 'no_midi'
+    if (audioMode.value === 'midi' && devices.value.midi.availableMidiOutputs.length === 0)
+      return 'no_midi'
     if (devices.value.webcam.availableCameras.length === 0) return 'no_camera'
     if (isReady.value) return 'ready'
     return 'unknown'
@@ -176,6 +180,11 @@ export const useAppStore = defineStore('appStore', () => {
   const setBaseOctave = (octave: number) => {
     musicalConfig.value.baseOctave = octave
   }
+  /** @description Define o modo de áudio (tone ou midi). */
+  const setAudioMode = (mode: 'tone' | 'midi') => {
+    audioMode.value = mode
+  }
+
   /** @description Alterna a visibilidade da câmera. */
   const toggleCamera = () => {
     showCamera.value = !showCamera.value
@@ -194,6 +203,7 @@ export const useAppStore = defineStore('appStore', () => {
     appSystem,
     status,
     error,
+    audioMode,
     gestureActive,
     lastGesturePosition,
     showCamera,
@@ -222,7 +232,8 @@ export const useAppStore = defineStore('appStore', () => {
     selectScale,
     setBaseOctave,
     toggleCamera,
-    addDebugInfo
+    addDebugInfo,
+    setAudioMode
   }
 })
 

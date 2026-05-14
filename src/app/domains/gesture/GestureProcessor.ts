@@ -75,4 +75,27 @@ export class GestureProcessor {
       handler.stop?.()
     }
   }
+
+  /** @description Substitui o serviço de áudio nos handlers, sem recriar o detector. */
+  updateMidiService(midiService: IMidiService): void {
+    this.midiService = midiService
+    const sortedHandlers = [
+      new PinchGestureHandler(
+        midiService,
+        this.visualsService,
+        this.appConfig.domains.midi,
+        this.appConfig.domains.gestures,
+        this.store
+      ),
+      new HandModulationHandler(
+        midiService,
+        this.visualsService,
+        this.appConfig.domains.midi,
+        this.appConfig.domains.gestures,
+        this.store
+      )
+    ].sort((a, b) => this.getPriorityValue(b.priority) - this.getPriorityValue(a.priority))
+    this.handlers.length = 0
+    this.handlers.push(...sortedHandlers)
+  }
 }

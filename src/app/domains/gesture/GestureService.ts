@@ -53,6 +53,11 @@ export class GestureService implements IGestureService {
     this.processor.stopAllGestures()
   }
 
+  /** @description Substitui o serviço de áudio nos handlers de gestos. */
+  updateMidiService(midiService: IMidiService): void {
+    this.processor.updateMidiService(midiService)
+  }
+
   /** @description Para o serviço de gestos. */
   async stop(): Promise<void> {
     await this.detector.stop()

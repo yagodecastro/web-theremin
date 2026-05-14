@@ -11,11 +11,11 @@ const fpsInfo = computed(() => {
 
 <template>
   <header
-    class="bg-dark-metal p-4 rounded-lg border-2 border-retro-gray-600 shadow-bevel max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 items-center justify-between"
+    class="bg-dark-metal p-2 rounded-lg border-2 border-retro-gray-600 shadow-bevel max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between"
   >
-    <div class="flex items-center gap-4">
-      <div class="w-2 h-6 bg-neon-green rounded-full animate-glow shadow-neon-green" />
-      <h1 class="text-2xl font-display text-white tracking-widest">Theremin Gestual Interativo</h1>
+    <div class="flex items-center gap-3">
+      <div class="w-1.5 h-5 bg-neon-green rounded-full animate-glow shadow-neon-green" />
+      <h1 class="text-xl font-display text-white tracking-widest uppercase">Theremin Gestual</h1>
     </div>
 
     <div class="flex items-center gap-4">

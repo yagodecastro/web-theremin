@@ -10,7 +10,13 @@ import { defaultConfig } from '@/app/shared/config/defaults.ts'
 
 const videoElement = ref<HTMLVideoElement>()
 const visualsCanvas = ref<HTMLCanvasElement>()
+const isControlsOpen = ref(true)
 const store = useAppStore()
+
+const toggleControls = () => {
+  isControlsOpen.value = !isControlsOpen.value
+}
+
 let appInstance: AppController | null = null
 
 /**
@@ -31,7 +37,7 @@ const tryInitializeSystem = async () => {
         'info',
         'AppController.vue: Iniciando construção da instância AppController...'
       )
-      const app = new AppController(defaultConfig, store)
+      const app = new AppController(defaultConfig, store, store.audioMode)
       appInstance = app
       store.setAppSystem(app)
 
@@ -179,6 +185,18 @@ const handlePanicMidi = () => {
   }
 }
 
+const handleSwitchAudioMode = async (mode: 'tone' | 'midi') => {
+  if (appInstance) {
+    try {
+      await appInstance.switchAudioMode(mode)
+      store.addSystemLog('info', `Modo de áudio alterado para: ${mode}`)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      store.addSystemLog('error', `Erro ao trocar modo de áudio: ${errorMessage}`)
+    }
+  }
+}
+
 onMounted(() => {
   store.addSystemLog(
     'info',
@@ -196,37 +214,51 @@ onBeforeUnmount(async () => {
 </script>
 
 <template>
-  <div class="w-full max-w-7xl mx-auto my-12 min-h-screen bg-retro-blue text-white font-mono pt-4">
+  <div class="w-full max-w-7xl mx-auto my-4 min-h-screen bg-retro-blue text-white font-mono pt-2">
     <MainHeader />
 
-    <main class="flex-1 space-y-4 mt-4">
-      <div class="bg-dark-metal p-6 rounded-lg border-2 border-retro-gray-600 shadow-bevel">
-        <div class="flex items-center gap-4 mb-4">
-          <div class="w-2 h-6 bg-neon-cyan rounded-full animate-glow shadow-neon-cyan" />
-          <h2 class="text-neon-green font-typewriter font-bold text-lg uppercase tracking-wider">
-            CONTROL INTERFACE
-          </h2>
+    <main class="flex-1 space-y-3 mt-3">
+      <div class="bg-dark-metal p-4 rounded-lg border-2 border-retro-gray-600 shadow-bevel">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-3">
+            <div class="w-1.5 h-5 bg-neon-cyan rounded-full animate-glow shadow-neon-cyan" />
+            <h2 class="text-neon-green font-typewriter font-bold text-base uppercase tracking-wider">
+              CONTROL INTERFACE
+            </h2>
+          </div>
+          <button
+            @click="toggleControls"
+            class="text-neon-cyan hover:text-white transition-colors text-xs font-bold flex items-center gap-1 border border-neon-cyan/30 px-2 py-1 rounded"
+          >
+            {{ isControlsOpen ? '▲ COLLAPSE' : '▼ EXPAND' }}
+          </button>
         </div>
-        <Controls
-          @panic="handlePanicMidi"
-          @restart="handleRestart"
-          @start="handleStart"
-          @stop="handleStop"
-          @full-restart="handleFullSystemRestart"
-        />
+
+        <div
+          v-show="isControlsOpen"
+          class="pt-2 border-t border-retro-gray-700 mt-2 transition-all duration-300"
+        >
+          <Controls
+            @panic="handlePanicMidi"
+            @restart="handleRestart"
+            @start="handleStart"
+            @stop="handleStop"
+            @full-restart="handleFullSystemRestart"
+            @switch-audio-mode="handleSwitchAudioMode"
+          />
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 gap-4">
-        <div class="lg:col-span-2 space-y-4">
-          <div class="p-2 rounded border border-retro-gray-700 shadow-crt">
+      <div class="grid grid-cols-1 gap-3">
+        <div class="lg:col-span-2 space-y-3">
+          <div class="p-1 rounded border border-retro-gray-700 shadow-crt">
             <VideoCanvas @video-ready="onVideoReady" @visuals-ready="onVisualsReady" />
           </div>
         </div>
       </div>
-      <div class="bg-dark-metal p-6 rounded-lg border-2 border-retro-gray-600 shadow-bevel">
+      <div class="bg-dark-metal p-4 rounded-lg border-2 border-retro-gray-600 shadow-bevel">
         <LogTerminal />
       </div>
-      <div class="grid grid-cols-1 gap-2"></div>
     </main>
   </div>
 </template>
