@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://yagodecastro.github.io/web-theremin/sitemap.xml
