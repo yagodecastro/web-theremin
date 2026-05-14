@@ -35,6 +35,7 @@ const emit = defineEmits<{
   panic: []
   'full-restart': []
   'switch-audio-mode': [mode: 'tone' | 'midi']
+  fullscreen: []
 }>()
 
 const handleStartClick = () => {
@@ -170,10 +171,10 @@ const toggleAudioMode = () => {
         @click="store.toggleCamera"
       />
       <ActionButton
-        :disabled="store.audioMode === 'midi' && !store.devices.midi.selectedMidiOutput"
-        :label="store.audioMode === 'tone' ? 'TEST AUDIO' : 'TEST MIDI'"
-        variant="secondary"
-        @click="() => store.appSystem?.testMidi()"
+        :disabled="!store.isRunning"
+        :label="store.isFullscreen ? 'EXIT FULL' : 'FULLSCREEN'"
+        :variant="store.isFullscreen ? 'primary' : 'secondary'"
+        @click="emit('fullscreen')"
       />
     </div>
   </div>

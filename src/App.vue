@@ -10,6 +10,7 @@ import { defaultConfig } from '@/app/shared/config/defaults.ts'
 
 const videoElement = ref<HTMLVideoElement>()
 const visualsCanvas = ref<HTMLCanvasElement>()
+const videoCanvasRef = ref<InstanceType<typeof VideoCanvas>>()
 const isControlsOpen = ref(true)
 const store = useAppStore()
 
@@ -179,6 +180,8 @@ const handleFullSystemRestart = async () => {
   }
 }
 
+const handleFullscreen = () => videoCanvasRef.value?.toggleFullscreen()
+
 const handlePanicMidi = () => {
   if (appInstance) {
     appInstance.panicMidi()
@@ -227,8 +230,8 @@ onBeforeUnmount(async () => {
             </h2>
           </div>
           <button
-            @click="toggleControls"
             class="text-neon-cyan hover:text-white transition-colors text-xs font-bold flex items-center gap-1 border border-neon-cyan/30 px-2 py-1 rounded"
+            @click="toggleControls"
           >
             {{ isControlsOpen ? '▲ COLLAPSE' : '▼ EXPAND' }}
           </button>
@@ -245,6 +248,7 @@ onBeforeUnmount(async () => {
             @stop="handleStop"
             @full-restart="handleFullSystemRestart"
             @switch-audio-mode="handleSwitchAudioMode"
+            @fullscreen="handleFullscreen"
           />
         </div>
       </div>
@@ -252,7 +256,7 @@ onBeforeUnmount(async () => {
       <div class="grid grid-cols-1 gap-3">
         <div class="lg:col-span-2 space-y-3">
           <div class="p-1 rounded border border-retro-gray-700 shadow-crt">
-            <VideoCanvas @video-ready="onVideoReady" @visuals-ready="onVisualsReady" />
+            <VideoCanvas ref="videoCanvasRef" @video-ready="onVideoReady" @visuals-ready="onVisualsReady" />
           </div>
         </div>
       </div>

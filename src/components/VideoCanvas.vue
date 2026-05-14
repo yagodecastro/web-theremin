@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useAppStore } from '@/stores/appStore'
 
 const emit = defineEmits<{
@@ -8,22 +8,36 @@ const emit = defineEmits<{
 }>()
 
 const store = useAppStore()
+const container = ref<HTMLDivElement>()
 const videoElement = ref<HTMLVideoElement>()
 const visualsContainer = ref<HTMLCanvasElement>()
 
+const toggleFullscreen = async () => {
+  if (!document.fullscreenElement) {
+    await container.value?.requestFullscreen()
+  } else {
+    await document.exitFullscreen()
+  }
+}
+
+const onFullscreenChange = () => store.setFullscreen(!!document.fullscreenElement)
+
 onMounted(() => {
-  if (videoElement.value) {
-    emit('videoReady', videoElement.value)
-  }
-  if (visualsContainer.value) {
-    emit('visualsReady', visualsContainer.value)
-  }
+  document.addEventListener('fullscreenchange', onFullscreenChange)
+  if (videoElement.value) emit('videoReady', videoElement.value)
+  if (visualsContainer.value) emit('visualsReady', visualsContainer.value)
 })
+
+onBeforeUnmount(() => document.removeEventListener('fullscreenchange', onFullscreenChange))
+
+defineExpose({ toggleFullscreen })
 </script>
 
 <template>
   <div
+    ref="container"
     class="max-w-5xl mx-auto aspect-4/3 max-h-full relative w-full h-full rounded-lg overflow-hidden"
+    @dblclick="toggleFullscreen"
   >
     <video
       ref="videoElement"

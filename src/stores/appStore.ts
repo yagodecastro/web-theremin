@@ -32,6 +32,7 @@ export const useAppStore = defineStore('appStore', () => {
   const gestureActive = ref(false)
   const lastGesturePosition = ref<{ x: number; y: number } | null>(null)
   const showCamera = ref(false)
+  const isFullscreen = ref(false)
   const debugInfoValue = reactive<Array<{ key: string; value: string | undefined }>>([])
   const devices = ref({
     midi: {
@@ -204,6 +205,10 @@ export const useAppStore = defineStore('appStore', () => {
   const toggleCamera = () => {
     showCamera.value = !showCamera.value
   }
+  /** @description Sincroniza o estado de fullscreen com a API do browser. */
+  const setFullscreen = (v: boolean) => {
+    isFullscreen.value = v
+  }
   /** @description Adiciona ou atualiza uma informação de debug. */
   const addDebugInfo = (key: string, value: string | undefined) => {
     const index = debugInfoValue.findIndex(item => item.key === key)
@@ -222,6 +227,7 @@ export const useAppStore = defineStore('appStore', () => {
     gestureActive,
     lastGesturePosition,
     showCamera,
+    isFullscreen,
     devices,
     musicalConfig,
     systemLogs,
@@ -249,6 +255,7 @@ export const useAppStore = defineStore('appStore', () => {
     setBaseOctave,
     setOctaveRange,
     toggleCamera,
+    setFullscreen,
     addDebugInfo,
     setAudioMode
   }
