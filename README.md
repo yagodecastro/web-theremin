@@ -1,5 +1,7 @@
 # Web Theremin
 
+[![DOI](https://zenodo.org/badge/1062915118.svg)](https://doi.org/10.5281/zenodo.20184763)
+
 A gestural web theremin: converts hand movements captured by the webcam into musical notes and visual effects in real time. Runs directly in the browser via Tone.js synthesis or connected to an external MIDI device.
 
 > Final Project — **MBA in Software Engineering**  
@@ -61,13 +63,14 @@ bun run format         # Prettier
 ## How to cite
 
 ```bibtex
-@misc{decastro2026webtheremin,
-  author       = {de Castro, Yago Fernando Bastos},
-  title        = {Web Theremin: Expressive Musical Interface on the Web with Gestural Control and Audiovisual Feedback},
-  year         = {2026},
-  url          = {https://yagodecastro.github.io/web-theremin},
-  howpublished = {\url{https://github.com/yagodecastro/web-theremin}},
-  note         = {Prototype developed as the practical result of the Final Project in Software Engineering — University of São Paulo, USP/ESALQ, 2026}
+@software{decastro2026webtheremin,
+  author    = {de Castro, Yago Fernando Bastos},
+  title     = {Web Theremin: Expressive Musical Interface on the Web with Gestural Control and Audiovisual Feedback},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.20184764},
+  url       = {https://doi.org/10.5281/zenodo.20184764},
+  note      = {Prototype developed as the practical result of the Final Project in Software Engineering — University of São Paulo, USP/ESALQ, 2026}
 }
 ```
 
