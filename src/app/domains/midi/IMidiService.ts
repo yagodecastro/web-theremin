@@ -16,8 +16,12 @@ export interface IMidiService {
   connect(deviceName: string | undefined): Promise<void>
   /** @description Define a escala musical. */
   setScale(scaleName: string): void
+  /** @description Define a tônica da escala. */
+  setTonic(tonic: string): void
   /** @description Define a oitava base. */
   setBaseOctave(octave: number): void
+  /** @description Define o número de oitavas cobertas. */
+  setOctaveRange(range: number): void
   /** @description Testa a conexão MIDI. */
   testConnection(): void
   /** @description Envia um comando de pânico para parar todo o som. */

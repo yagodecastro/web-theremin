@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
-import { Scale } from 'tonal'
+import { AVAILABLE_SCALES, CHROMATIC_NOTES } from '@/app/shared/utils/musicTheoryUtils'
 import type { AppController } from '@/app/core'
 import { LogType } from 'vite'
 import { VisualEffect } from '@/app/domains/visuals'
@@ -44,9 +44,12 @@ export const useAppStore = defineStore('appStore', () => {
     }
   })
   const musicalConfig = ref({
-    selectedScale: 'C major',
-    baseOctave: 4,
-    availableScales: Scale.names()
+    tonic: 'A',
+    scaleName: 'minor pentatonic',
+    baseOctave: 3,
+    octaveRange: 3,
+    availableScales: AVAILABLE_SCALES,
+    availableTonics: CHROMATIC_NOTES
   })
   const systemLogs = ref<LogEntry[]>([])
   const visualEffects = ref<VisualEffect[]>([])
@@ -172,13 +175,25 @@ export const useAppStore = defineStore('appStore', () => {
   const selectCamera = (deviceId: string) => {
     devices.value.webcam.selectedCamera = deviceId
   }
-  /** @description Seleciona uma escala musical. */
+  /** @description Seleciona uma escala musical e propaga ao serviço de áudio. */
   const selectScale = (scaleName: string) => {
-    musicalConfig.value.selectedScale = scaleName
+    musicalConfig.value.scaleName = scaleName
+    appSystem.value?.setScale(scaleName)
   }
-  /** @description Define a oitava base. */
+  /** @description Define a tônica e propaga ao serviço de áudio. */
+  const setTonic = (tonic: string) => {
+    musicalConfig.value.tonic = tonic
+    appSystem.value?.setTonic(tonic)
+  }
+  /** @description Define a oitava base e propaga ao serviço de áudio. */
   const setBaseOctave = (octave: number) => {
     musicalConfig.value.baseOctave = octave
+    appSystem.value?.setBaseOctave(octave)
+  }
+  /** @description Define o range de oitavas e propaga ao serviço de áudio. */
+  const setOctaveRange = (range: number) => {
+    musicalConfig.value.octaveRange = range
+    appSystem.value?.setOctaveRange(range)
   }
   /** @description Define o modo de áudio (tone ou midi). */
   const setAudioMode = (mode: 'tone' | 'midi') => {
@@ -230,7 +245,9 @@ export const useAppStore = defineStore('appStore', () => {
     selectMidiOutput,
     selectCamera,
     selectScale,
+    setTonic,
     setBaseOctave,
+    setOctaveRange,
     toggleCamera,
     addDebugInfo,
     setAudioMode

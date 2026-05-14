@@ -47,8 +47,10 @@ const midiConfig: MidiConfig = {
   },
   maxValue: 127,
   channel: 1,
+  tonic: 'A',
   baseOctave: 3,
-  scale: 'whole tone'
+  scale: 'minor pentatonic',
+  octaveRange: 3
 } as const
 
 const visualsConfig: VisualEffectsConfig = {

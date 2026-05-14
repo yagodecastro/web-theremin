@@ -17,6 +17,16 @@ const cameraOptions = computed(() =>
   }))
 )
 
+const tonicOptions = computed(() =>
+  store.musicalConfig.availableTonics.map(note => ({ value: note, label: note }))
+)
+
+const scaleOptions = computed(() => store.musicalConfig.availableScales)
+
+const octaveRangeOptions = [1, 2, 3, 4, 5].map(n => ({ value: String(n), label: `${n} oct` }))
+
+const baseOctaveOptions = [1, 2, 3, 4, 5, 6, 7].map(n => ({ value: String(n), label: `Oct ${n}` }))
+
 const emit = defineEmits<{
   start: []
   stop: []
@@ -41,8 +51,40 @@ const toggleAudioMode = () => {
 </script>
 
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-2 md:justify-between gap-4">
-    <div class="grid grid-cols-1 md:grid-cols-3 md:col-span-2 gap-3">
+  <div class="grid grid-cols-1 gap-4">
+    <!-- Linha 1: escala musical -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <LabeledSelect
+        :model-value="store.musicalConfig.tonic"
+        :options="tonicOptions"
+        label="TONIC"
+        variant="purple"
+        @update:model-value="store.setTonic"
+      />
+      <LabeledSelect
+        :model-value="store.musicalConfig.scaleName"
+        :options="scaleOptions"
+        label="SCALE"
+        variant="purple"
+        @update:model-value="store.selectScale"
+      />
+      <LabeledSelect
+        :model-value="String(store.musicalConfig.baseOctave)"
+        :options="baseOctaveOptions"
+        label="BASE OCT"
+        variant="purple"
+        @update:model-value="v => store.setBaseOctave(Number(v))"
+      />
+      <LabeledSelect
+        :model-value="String(store.musicalConfig.octaveRange)"
+        :options="octaveRangeOptions"
+        label="RANGE"
+        variant="purple"
+        @update:model-value="v => store.setOctaveRange(Number(v))"
+      />
+    </div>
+    <!-- Linha 2: dispositivos -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
       <ActionButton
         :label="store.audioMode === 'tone' ? 'TONE.JS' : 'MIDI'"
         :variant="store.audioMode === 'tone' ? 'primary' : 'warning'"
@@ -96,7 +138,8 @@ const toggleAudioMode = () => {
         "
       />
     </div>
-    <div class="grid grid-cols-2 md:col-span-2 lg:grid-cols-5 gap-2">
+    <!-- Linha 3: ações -->
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-2">
       <ActionButton
         :disabled="store.isBusy && !store.hasError"
         :label="store.hasError ? 'RESTART SYSTEM' : 'START'"

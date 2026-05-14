@@ -5,7 +5,9 @@ export interface MidiConfig {
   outputDevice?: string
   channel: number
   scale: string
+  tonic: string
   baseOctave: number
+  octaveRange: number
   readonly maxValue: number
   readonly defaultThreshold: number
   readonly controlChanges: {

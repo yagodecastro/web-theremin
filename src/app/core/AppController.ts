@@ -112,9 +112,19 @@ export class AppController {
     this.midiService.setScale(scaleName)
   }
 
+  /** @description Altera a tônica da escala. */
+  setTonic(tonic: string): void {
+    this.midiService.setTonic(tonic)
+  }
+
   /** @description Define a oitava base para a geração de notas. */
   setBaseOctave(octave: number): void {
     this.midiService.setBaseOctave(octave)
+  }
+
+  /** @description Define o número de oitavas cobertas pelo theremin. */
+  setOctaveRange(range: number): void {
+    this.midiService.setOctaveRange(range)
   }
 
   /** @description Troca para um dispositivo de câmera diferente. */

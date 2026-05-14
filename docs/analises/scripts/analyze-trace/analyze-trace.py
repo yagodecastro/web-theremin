@@ -266,7 +266,7 @@ def generate_plots(results, output_path, output_format='png'):
     buckets = results['fps_distribution']
     durations = results.get('durations', [])
 
-    fig1, ax1 = plt.subplots(figsize=(12, 8))
+    fig1, ax1 = plt.subplots(figsize=(12, 4))
     ax1.plot(frame_indices, fps_values, color='#1f77b4', linewidth=2, label='FPS')
     ax1.axhline(y=configured_fps, color='#d62728', linestyle='--', linewidth=2,
                 label=f'FPS Alvo ({configured_fps})')
@@ -277,7 +277,7 @@ def generate_plots(results, output_path, output_format='png'):
     ax1.grid(True, alpha=0.3)
     plt.tight_layout()
 
-    fig2, ax2 = plt.subplots(figsize=(12, 8))
+    fig2, ax2 = plt.subplots(figsize=(12, 4))
     ax2.hist(fps_values, bins=30, color='#ff7f0e', alpha=0.7, edgecolor='black')
     ax2.set_xlabel('FPS', fontsize=12)
     ax2.set_ylabel('Frequência', fontsize=12)
@@ -307,7 +307,7 @@ def generate_plots(results, output_path, output_format='png'):
     ]
 
     if durations:
-        fig4, ax4 = plt.subplots(figsize=(12, 8))
+        fig4, ax4 = plt.subplots(figsize=(12, 4))
         duration_indices = list(range(len(durations)))
         ax4.plot(duration_indices, durations, color='#9467bd', linewidth=2, label='Duração (ms)')
         ax4.set_xlabel('Índice do Frame', fontsize=12)

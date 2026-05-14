@@ -127,15 +127,32 @@ export class MidiService implements IMidiService {
     this.updateScale()
   }
 
+  /** @description Altera a tônica da escala. */
+  setTonic(tonic: string): void {
+    this.config.tonic = tonic
+    this.updateScale()
+  }
+
   /** @description Altera a oitava base para a geração de notas. */
   setBaseOctave(octave: number): void {
     this.config.baseOctave = Math.max(1, Math.min(7, octave))
     this.updateScale()
   }
 
+  /** @description Altera o número de oitavas cobertas. */
+  setOctaveRange(range: number): void {
+    this.config.octaveRange = Math.max(1, Math.min(6, range))
+    this.updateScale()
+  }
+
   /** @description Atualiza a escala MIDI atual com base na configuração. */
   private updateScale(): void {
-    this.midiScale = generateMidiScale(this.config.scale, this.config.baseOctave)
+    this.midiScale = generateMidiScale(
+      this.config.scale,
+      this.config.tonic,
+      this.config.baseOctave,
+      this.config.octaveRange
+    )
   }
 
   /** @description Testa a conexão MIDI tocando uma nota. */
