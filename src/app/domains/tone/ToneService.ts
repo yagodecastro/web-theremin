@@ -99,9 +99,9 @@ export class ToneService implements IMidiService {
     if (!this.isConnected) return
     const n = Math.max(0, Math.min(127, value)) / 127
     switch (controller) {
-      // left.y → filter cutoff: exponential curve 80 Hz – 10 kHz
+      // left.y → filter cutoff: exponential curve 80 Hz – 10 kHz (inverted: hand up = more cutoff)
       case 71:
-        this.filter.frequency.rampTo(80 * Math.pow(10000 / 80, n), 0.03)
+        this.filter.frequency.rampTo(80 * Math.pow(10000 / 80, 1 - n), 0.03)
         break
       // left.openness → filter resonance Q: 0.5 – 20
       case 1:
@@ -111,9 +111,9 @@ export class ToneService implements IMidiService {
       case 11:
         this.vibrato.depth.rampTo(n, 0.05)
         break
-      // right.y → distortion drive: 0 – 0.95
+      // right.y → distortion drive: 0 – 0.95 (inverted: hand up = more drive)
       case 20:
-        this.distortion.distortion = n * 0.95
+        this.distortion.distortion = (1 - n) * 0.95
         break
       // right.x → delay wet: 0 – 0.7
       case 21:
