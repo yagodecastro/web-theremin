@@ -4,6 +4,7 @@ import * as path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
+  base: process.env.GITHUB_PAGES ? '/web-theremin/' : '/',
   plugins: [vue(), tailwindcss()],
   server: {
     watch: {

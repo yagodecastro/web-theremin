@@ -2,6 +2,12 @@
 
 Aplicação web de theremin gestual: converte movimentos das mãos capturados pela webcam em notas musicais e efeitos visuais em tempo real. Funciona direto no browser via síntese Tone.js ou conectado a um dispositivo MIDI externo.
 
+> Trabalho de Conclusão de Curso — **MBA em Engenharia de Software**  
+> Universidade de São Paulo · ESALQ · 2026
+> **Autor:** de Castro, Yago F. B.
+
+Este projeto é o artefato prático do TCC intitulado *"Interface Musical Expressiva na Web com Controle Gestual e Feedback Audiovisual"*. O objetivo é demonstrar a viabilidade de construir uma interface musical expressiva inteiramente no browser, sem hardware dedicado, utilizando visão computacional para rastreamento gestual em tempo real como mecanismo de controle e síntese de áudio como meio de expressão.
+
 ## Tecnologias
 
 - **Vue 3** com Composition API e TypeScript
@@ -46,6 +52,23 @@ bun run check          # TypeScript + ESLint
 bun run typecheck      # Apenas TypeScript
 bun run lint           # Apenas ESLint
 bun run format         # Prettier
+```
+
+## Acesso
+
+[https://yagodecastro.github.io/web-theremin](https://yagodecastro.github.io/web-theremin)
+
+## Como citar
+
+```bibtex
+@misc{decastro2026webtheremin,
+  author       = {de Castro, Yago Fernando Bastos},
+  title        = {Web Theremin: Interface Musical Expressiva na Web com Controle Gestual e Feedback Audiovisual},
+  year         = {2026},
+  url          = {https://yagodecastro.github.io/web-theremin},
+  howpublished = {\url{https://github.com/yagodecastro/web-theremin}},
+  note         = {Protótipo desenvolvido como resultado do Trabalho de Conclusão de Curso em Engenharia de Software - Universidade de São Paulo, USP/ESALQ, 2026}
+}
 ```
 
 ## Licença
