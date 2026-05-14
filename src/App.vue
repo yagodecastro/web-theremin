@@ -7,6 +7,7 @@ import Controls from '@/components/Controls.vue'
 import VideoCanvas from '@/components/VideoCanvas.vue'
 import LogTerminal from '@/components/LogTerminal.vue'
 import { defaultConfig } from '@/app/shared/config/defaults.ts'
+import AppFooter from '@/components/AppFooter.vue'
 
 const videoElement = ref<HTMLVideoElement>()
 const visualsCanvas = ref<HTMLCanvasElement>()
@@ -264,5 +265,7 @@ onBeforeUnmount(async () => {
         <LogTerminal />
       </div>
     </main>
+
+    <AppFooter />
   </div>
 </template>
