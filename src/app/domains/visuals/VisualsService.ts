@@ -1,4 +1,4 @@
-import { AsciiFilter, GlitchFilter } from 'pixi-filters'
+import { AsciiFilter, AdvancedBloomFilter, GodrayFilter } from 'pixi-filters'
 import { Application, Color, Container, Graphics, Texture, Sprite } from 'pixi.js'
 import { CanvasConfig, EffectOptions, PooledParticle } from './visualEffects'
 import { HandednessType } from '@/app/domains/gesture/utils/gestureUtils.ts'
@@ -25,7 +25,8 @@ export class VisualsService implements IVisualsService {
   private constellationGraphics: Graphics | null = null
   private videoSprite: Sprite | null = null
   private asciiFilter: AsciiFilter | null = null
-  private glitchFilter: GlitchFilter | null = null
+  private bloomFilter: AdvancedBloomFilter | null = null
+  private godrayFilter: GodrayFilter | null = null
 
   constructor(
     public readonly canvasConfig: CanvasConfig,
@@ -66,13 +67,21 @@ export class VisualsService implements IVisualsService {
         this.app.stage.addChild(this.videoSprite)
         
         this.asciiFilter = new AsciiFilter(12)
-        this.glitchFilter = new GlitchFilter({
-          slices: 8,
-          offset: 40,
-          average: false,
-          red: [5, 5],
-          green: [-5, -5],
-          blue: [5, -5]
+        
+        this.bloomFilter = new AdvancedBloomFilter({
+          threshold: 0.2,
+          bloomScale: 1.5,
+          brightness: 1.2,
+          blur: 8,
+          quality: 4
+        })
+        
+        this.godrayFilter = new GodrayFilter({
+          angle: 30,
+          gain: 0.6,
+          lacunarity: 2.5,
+          time: 0,
+          alpha: 0.7
         })
       }
 
@@ -195,14 +204,11 @@ export class VisualsService implements IVisualsService {
 
         if (mode === 'constellation' && this.asciiFilter) {
           this.videoSprite.filters = [this.asciiFilter]
-        } else if (mode === 'synesthesia' && this.glitchFilter) {
-          this.videoSprite.filters = [this.glitchFilter]
+        } else if (mode === 'synesthesia' && this.bloomFilter && this.godrayFilter) {
+          this.videoSprite.filters = [this.bloomFilter, this.godrayFilter]
           
-          // Anima o glitch filter de forma intermitente
-          if (Math.random() > 0.8) {
-            this.glitchFilter.seed = Math.random()
-            this.glitchFilter.refresh()
-          }
+          // Anima os godrays fluidamente ao longo do tempo para um aspecto orgânico
+          this.godrayFilter.time += 0.01
         } else {
           this.videoSprite.filters = []
         }
