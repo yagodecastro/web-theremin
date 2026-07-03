@@ -1,4 +1,4 @@
-import { AsciiFilter, AdvancedBloomFilter, GodrayFilter } from 'pixi-filters'
+import { AsciiFilter, HslAdjustmentFilter, RGBSplitFilter } from 'pixi-filters'
 import { Application, Color, Container, Graphics, Texture, Sprite } from 'pixi.js'
 import { CanvasConfig, EffectOptions, PooledParticle } from './visualEffects'
 import { HandednessType } from '@/app/domains/gesture/utils/gestureUtils.ts'
@@ -25,8 +25,9 @@ export class VisualsService implements IVisualsService {
   private constellationGraphics: Graphics | null = null
   private videoSprite: Sprite | null = null
   private asciiFilter: AsciiFilter | null = null
-  private bloomFilter: AdvancedBloomFilter | null = null
-  private godrayFilter: GodrayFilter | null = null
+  private hslFilter: HslAdjustmentFilter | null = null
+  private rgbSplitFilter: RGBSplitFilter | null = null
+  private time: number = 0
 
   constructor(
     public readonly canvasConfig: CanvasConfig,
@@ -68,20 +69,18 @@ export class VisualsService implements IVisualsService {
         
         this.asciiFilter = new AsciiFilter(12)
         
-        this.bloomFilter = new AdvancedBloomFilter({
-          threshold: 0.2,
-          bloomScale: 1.5,
-          brightness: 1.2,
-          blur: 8,
-          quality: 4
+        this.hslFilter = new HslAdjustmentFilter({
+          hue: 0,
+          saturation: 0.5,
+          lightness: 0,
+          colorize: false,
+          alpha: 1
         })
         
-        this.godrayFilter = new GodrayFilter({
-          angle: 30,
-          gain: 0.6,
-          lacunarity: 2.5,
-          time: 0,
-          alpha: 0.7
+        this.rgbSplitFilter = new RGBSplitFilter({
+          red: { x: -5, y: 0 },
+          green: { x: 0, y: 5 },
+          blue: { x: 5, y: 0 }
         })
       }
 
@@ -204,11 +203,21 @@ export class VisualsService implements IVisualsService {
 
         if (mode === 'constellation' && this.asciiFilter) {
           this.videoSprite.filters = [this.asciiFilter]
-        } else if (mode === 'synesthesia' && this.bloomFilter && this.godrayFilter) {
-          this.videoSprite.filters = [this.bloomFilter, this.godrayFilter]
+        } else if (mode === 'synesthesia' && this.hslFilter && this.rgbSplitFilter) {
+          this.videoSprite.filters = [this.hslFilter, this.rgbSplitFilter]
           
-          // Anima os godrays fluidamente ao longo do tempo para um aspecto orgânico
-          this.godrayFilter.time += 0.01
+          this.time += 0.01
+          
+          // Efeito Psicodélico: Rotação contínua de matiz (Hue shift)
+          // Vai de -180 a 180 graus ciclicamente
+          this.hslFilter.hue = (Math.sin(this.time) * 180)
+          
+          // Efeito "Respiração / LSD": Separação de canais RGB pulsante
+          const splitBase = Math.sin(this.time * 2) * 15
+          this.rgbSplitFilter.red = { x: -splitBase, y: splitBase }
+          this.rgbSplitFilter.green = { x: splitBase, y: -splitBase }
+          this.rgbSplitFilter.blue = { x: splitBase, y: splitBase }
+          
         } else {
           this.videoSprite.filters = []
         }
