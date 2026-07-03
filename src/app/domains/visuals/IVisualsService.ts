@@ -10,7 +10,7 @@ export interface IVisualsService {
   /** @description Limpa todos os efeitos visuais. */
   clear(): void
   /** @description Inicializa o serviço de visuais. */
-  initialize(visualsCanvas: HTMLCanvasElement): Promise<void>
+  initialize(visualsCanvas: HTMLCanvasElement, videoElement?: HTMLVideoElement): Promise<void>
   /** @description Para o serviço de visuais. */
   stop(): Promise<void>
 

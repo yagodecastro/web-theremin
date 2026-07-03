@@ -27,7 +27,7 @@ export class ToneService implements IMidiService {
   private limiter: Tone.Limiter
   private midiScale: (number | null)[] = []
   private isConnected = false
-  
+
   // Rastreamento de velocidade
   private lastX = 0
   private lastY = 0
@@ -35,7 +35,8 @@ export class ToneService implements IMidiService {
 
   constructor(
     private config: MidiConfig,
-    private readonly getPoeticMode: () => 'classic' | 'synesthesia' | 'constellation' = () => 'classic'
+    private readonly getPoeticMode: () => 'classic' | 'synesthesia' | 'constellation' = () =>
+      'classic'
   ) {
     this.distortion = new Tone.Distortion(0)
     this.vibrato = new Tone.Vibrato({ frequency: 5, depth: 0 })
@@ -89,10 +90,10 @@ export class ToneService implements IMidiService {
     const { note } = this.gestureToNote(gestureX, gestureY)
     if (note === null) return
     const noteName = TonalNote.fromMidi(note)
-    
+
     let velocity = ((1 - gestureY) * 0.73 + 0.27) * intensity
     const mode = this.getPoeticMode()
-    
+
     if (mode === 'synesthesia') {
       // Em sinestesia a dinâmica é mais controlada pela velocidade do movimento
       const now = performance.now()
@@ -100,7 +101,7 @@ export class ToneService implements IMidiService {
         const dt = now - this.lastTime
         const dx = gestureX - this.lastX
         const dy = gestureY - this.lastY
-        const speed = Math.sqrt(dx*dx + dy*dy) / dt
+        const speed = Math.sqrt(dx * dx + dy * dy) / dt
         // Mapear velocidade para brilho/filtro extra (opcionalmente velocity também)
         const cutoff = Math.min(10000, 200 + speed * 200000)
         this.filter.frequency.rampTo(cutoff, 0.1)
@@ -142,7 +143,7 @@ export class ToneService implements IMidiService {
     if (!this.isConnected) return
     const n = Math.max(0, Math.min(127, value)) / 127
     const mode = this.getPoeticMode()
-    
+
     switch (controller) {
       // left.y → filter cutoff: exponential curve 80 Hz – 10 kHz (inverted: hand up = more cutoff)
       case 71:

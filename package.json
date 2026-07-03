@@ -23,6 +23,7 @@
     "@vitejs/plugin-vue": "^6.0.1",
     "lucide-vue-next": "^1.0.0",
     "pinia": "^3.0.3",
+    "pixi-filters": "^6.1.5",
     "pixi.js": "^8.13.2",
     "tailwindcss": "^4.1.13",
     "tonal": "^6.4.2",

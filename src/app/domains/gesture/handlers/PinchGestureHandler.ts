@@ -46,7 +46,7 @@ export class PinchGestureHandler extends BaseGestureHandler {
     const pinchData = detectPinch(leftHandLandmarks, this.gestureConfig.handGesture.pinch.threshold)
     const wasActive = this.pinchState.isActive
     const isActive = pinchData?.isActive ?? false
-    
+
     // Always send CC100 for pinch distance if pinchData exists
     if (pinchData) {
       // pinchData.intensity goes from 0 (open) to 1 (closed)

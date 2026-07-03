@@ -1,4 +1,5 @@
-import { Application, Color, Container, Graphics, Texture } from 'pixi.js'
+import { AsciiFilter } from 'pixi-filters'
+import { Application, Color, Container, Graphics, Texture, Sprite } from 'pixi.js'
 import { CanvasConfig, EffectOptions, PooledParticle } from './visualEffects'
 import { HandednessType } from '@/app/domains/gesture/utils/gestureUtils.ts'
 import { createHandModulationEffect } from './visualEffects/handModulationUtils.ts'
@@ -22,6 +23,8 @@ export class VisualsService implements IVisualsService {
   private textureUsage: Map<string, number> = new Map()
   private fadeOverlay: Graphics | null = null
   private constellationGraphics: Graphics | null = null
+  private videoSprite: Sprite | null = null
+  private asciiFilter: AsciiFilter | null = null
 
   constructor(
     public readonly canvasConfig: CanvasConfig,
@@ -30,11 +33,14 @@ export class VisualsService implements IVisualsService {
     // EffectQueue plain (não-reativo) substitui AppStore para comunicação de efeitos.
     // Elimina ~60 disparos do sistema de reatividade Vue/Pinia por segundo.
     private readonly effectQueue: EffectQueue,
-    public readonly getPoeticMode: () => 'classic' | 'synesthesia' | 'constellation' = () => 'classic'
+    public readonly getPoeticMode: () => 'classic' | 'synesthesia' | 'constellation' = () =>
+      'classic',
+    private readonly getCameraOpacity: () => number = () => 0.6,
+    private readonly getShowCamera: () => boolean = () => true
   ) {}
 
   /** @description Inicializa a aplicação Pixi.js e o pool de partículas. */
-  async initialize(canvas: HTMLCanvasElement): Promise<void> {
+  async initialize(canvas: HTMLCanvasElement, videoElement?: HTMLVideoElement): Promise<void> {
     try {
       this.app = new Application()
       await this.app.init({
@@ -47,10 +53,21 @@ export class VisualsService implements IVisualsService {
         backgroundAlpha: 0,
         clearBeforeRender: true
       })
-      
+
+      if (videoElement) {
+        // Usa Texture.from para criar textura a partir do elemento de video
+        const videoTexture = await Texture.from(videoElement)
+        this.videoSprite = new Sprite(videoTexture)
+        this.videoSprite.width = this.canvasConfig.width
+        this.videoSprite.height = this.canvasConfig.height
+        this.app.stage.addChild(this.videoSprite)
+
+        this.asciiFilter = new AsciiFilter(12)
+      }
+
       this.constellationGraphics = new Graphics()
       this.app.stage.addChild(this.constellationGraphics)
-      
+
       this.particleContainer = new Container()
       this.app.stage.addChild(this.particleContainer)
       this.initializePool()
@@ -158,11 +175,27 @@ export class VisualsService implements IVisualsService {
    */
   render(): void {
     const mode = this.getPoeticMode()
-    
+
+    // Atualiza o sprite de vídeo
+    if (this.videoSprite) {
+      if (this.getShowCamera()) {
+        this.videoSprite.visible = true
+        this.videoSprite.alpha = this.getCameraOpacity()
+
+        if (mode === 'constellation' && this.asciiFilter) {
+          this.videoSprite.filters = [this.asciiFilter]
+        } else {
+          this.videoSprite.filters = []
+        }
+      } else {
+        this.videoSprite.visible = false
+      }
+    }
+
     if (this.constellationGraphics) {
       this.constellationGraphics.clear()
     }
-    
+
     // Fading overlay para sinestesia (rastro)
     if (mode === 'synesthesia' && this.fadeOverlay) {
       // Como a câmera está atrás, não podemos preencher com preto sólido.
@@ -198,7 +231,8 @@ export class VisualsService implements IVisualsService {
       this.emitPinchBurst(options as Omit<PinchBurstEffectData, 'type'>)
     } else if (type === 'handModulation') {
       const mode = this.getPoeticMode()
-      const modulationOptions = effect as import('@/app/domains/visuals/index.ts').HandModulationEffectData
+      const modulationOptions =
+        effect as import('@/app/domains/visuals/index.ts').HandModulationEffectData
       if (mode === 'constellation' && modulationOptions.landmarks && this.constellationGraphics) {
         this.drawConstellation(modulationOptions.landmarks)
       }
@@ -206,15 +240,17 @@ export class VisualsService implements IVisualsService {
     }
   }
 
-  private drawConstellation(landmarks: import('@mediapipe/tasks-vision').NormalizedLandmark[]): void {
+  private drawConstellation(
+    landmarks: import('@mediapipe/tasks-vision').NormalizedLandmark[]
+  ): void {
     if (!this.constellationGraphics) return
-    
+
     const g = this.constellationGraphics
     const w = this.canvasConfig.width
     const h = this.canvasConfig.height
-    
+
     g.setStrokeStyle({ width: 2, color: 0x00ffff, alpha: 0.6 })
-    
+
     const drawLine = (startIdx: number, endIdx: number) => {
       const p1 = landmarks[startIdx]
       const p2 = landmarks[endIdx]
@@ -222,25 +258,31 @@ export class VisualsService implements IVisualsService {
       g.moveTo(p1.x * w, p1.y * h)
       g.lineTo(p2.x * w, p2.y * h)
     }
-    
+
     // Draw palm base to fingers
     for (let i = 1; i <= 17; i += 4) {
       drawLine(0, i)
     }
-    
+
     // Draw finger segments
-    const fingers = [[1,2,3,4], [5,6,7,8], [9,10,11,12], [13,14,15,16], [17,18,19,20]]
+    const fingers = [
+      [1, 2, 3, 4],
+      [5, 6, 7, 8],
+      [9, 10, 11, 12],
+      [13, 14, 15, 16],
+      [17, 18, 19, 20]
+    ]
     for (const finger of fingers) {
       for (let i = 0; i < finger.length - 1; i++) {
-        drawLine(finger[i], finger[i+1])
+        drawLine(finger[i], finger[i + 1])
       }
     }
-    
+
     // Draw web connecting the base of fingers
     drawLine(5, 9)
     drawLine(9, 13)
     drawLine(13, 17)
-    
+
     // Draw nodes
     for (const p of landmarks) {
       g.circle(p.x * w, p.y * h, 3).fill({ color: 0xffffff, alpha: 0.8 })

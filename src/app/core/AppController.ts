@@ -42,7 +42,7 @@ export class AppController {
     try {
       await Promise.all([
         this.gestureService.initialize(videoElement),
-        this.visualsService.initialize(visualsCanvas)
+        this.visualsService.initialize(visualsCanvas, videoElement)
       ])
       const devices = await this.detectAvailableDevices()
       await this.connectMidi()
@@ -169,7 +169,9 @@ export class AppController {
       this.config.core.systemPerformance,
       this.config.domains.visuals,
       this.effectQueue,
-      () => this.store.poeticMode
+      () => this.store.poeticMode,
+      () => this.store.cameraOpacity,
+      () => this.store.showCamera
     )
   }
 
