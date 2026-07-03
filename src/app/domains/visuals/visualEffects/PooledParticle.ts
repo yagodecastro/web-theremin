@@ -9,6 +9,8 @@ export class PooledParticle extends Sprite {
   public life = 0
   public decay = 0
   public maxLife = 0
+  // Pré-calculado no activate() para substituir divisão por multiplicação no update()
+  private inverseMaxLife = 0
 
   constructor(texture: Texture) {
     super(texture)
@@ -28,6 +30,8 @@ export class PooledParticle extends Sprite {
     this.alpha = 1
     this.texture = options.texture
     this.scale.set(options.scale)
+    // Pré-calcular 1/maxLife para evitar divisão a cada frame no update()
+    this.inverseMaxLife = options.life > 0 ? 1 / options.life : 0
   }
 
   /** @description Desativa a partícula, tornando-a invisível e pronta para reutilização. */
@@ -46,7 +50,8 @@ export class PooledParticle extends Sprite {
       this.deactivate()
       return false
     }
-    this.alpha = this.maxLife > 0 ? this.life / this.maxLife : 0
+    // Multiplicação em vez de divisão (inverseMaxLife pré-calculado no activate)
+    this.alpha = this.life * this.inverseMaxLife
     this.x += this.vx
     this.y += this.vy
     return true

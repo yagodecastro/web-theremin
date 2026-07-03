@@ -11,7 +11,9 @@
     "lint": "eslint . --fix",
     "format": "prettier --write src/",
     "typecheck": "vue-tsc --noEmit",
-    "check": "npm run typecheck && npm run lint"
+    "check": "npm run typecheck && npm run lint",
+    "copy:mediapipe": "mkdir -p public/mediapipe/wasm && cp node_modules/@mediapipe/tasks-vision/wasm/* public/mediapipe/wasm/",
+    "postinstall": "npm run copy:mediapipe"
   },
   "dependencies": {
     "@mediapipe/hands": "^0.4.1675469240",

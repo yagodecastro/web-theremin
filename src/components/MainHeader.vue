@@ -15,7 +15,7 @@ const fpsInfo = computed(() => {
   >
     <div class="flex items-center gap-3">
       <div class="w-1.5 h-5 bg-neon-green rounded-full animate-glow shadow-neon-green" />
-      <h1 class="text-xl font-display text-white tracking-widest uppercase">Theremin Gestual</h1>
+      <h1 class="text-xl font-display text-white tracking-widest uppercase">Web Theremin</h1>
     </div>
 
     <div class="flex items-center gap-4">

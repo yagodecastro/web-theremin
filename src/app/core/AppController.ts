@@ -10,6 +10,7 @@ import { IGestureService } from '@/app/domains/gesture/IGestureService'
 import { IMidiService } from '@/app/domains/midi/IMidiService'
 import { IVisualsService } from '@/app/domains/visuals/IVisualsService'
 import { LogType } from 'vite'
+import { EffectQueue } from '@/app/shared/EffectQueue'
 
 /** @description Controla o ciclo de vida e o fluxo de dados central da aplicação. */
 export class AppController {
@@ -17,6 +18,8 @@ export class AppController {
   private midiService: IMidiService
   private readonly visualsService: IVisualsService
   private serviceOrchestrator: ServiceOrchestrator
+  // Fila plain (não-reativa) compartilhada entre gesture handlers e VisualsService
+  private readonly effectQueue = new EffectQueue()
 
   /** @description Constrói o AppController com suas dependências. */
   constructor(
@@ -145,7 +148,7 @@ export class AppController {
 
   /** @description Configura e retorna o serviço de gestos. */
   private setupGestureService = (): IGestureService => {
-    return new GestureService(this.config, this.midiService, this.visualsService, this.store)
+    return new GestureService(this.config, this.midiService, this.visualsService, this.effectQueue)
   }
 
   /** @description Configura e retorna o serviço de áudio conforme o modo ativo. */
@@ -162,7 +165,7 @@ export class AppController {
       this.config.core.canvas,
       this.config.core.systemPerformance,
       this.config.domains.visuals,
-      this.store
+      this.effectQueue
     )
   }
 

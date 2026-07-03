@@ -5,12 +5,8 @@ import { createHandModulationEffect } from './visualEffects/handModulationUtils.
 import { createPinchBurstEffect } from './visualEffects/pinchBurstUtils.ts'
 import { IVisualsService } from '@/app/domains/visuals/IVisualsService.ts'
 import { SystemPerformanceConfig } from '@/app/core'
-import {
-  PinchBurstEffectData,
-  VisualEffect,
-  VisualEffectsConfig
-} from '@/app/domains/visuals/index.ts'
-import { AppStore } from '@/stores/appStore.ts'
+import { PinchBurstEffectData, VisualEffect, VisualEffectsConfig } from '@/app/domains/visuals/index.ts'
+import { EffectQueue } from '@/app/shared/EffectQueue.ts'
 
 /** @description Gerencia a renderização de efeitos visuais com pooling de partículas e cache de texturas. */
 export class VisualsService implements IVisualsService {
@@ -25,7 +21,9 @@ export class VisualsService implements IVisualsService {
     public readonly canvasConfig: CanvasConfig,
     public readonly systemPerformance: SystemPerformanceConfig,
     public readonly visualEffectsConfig: VisualEffectsConfig,
-    private readonly store: AppStore
+    // EffectQueue plain (não-reativo) substitui AppStore para comunicação de efeitos.
+    // Elimina ~60 disparos do sistema de reatividade Vue/Pinia por segundo.
+    private readonly effectQueue: EffectQueue
   ) {}
 
   /** @description Inicializa a aplicação Pixi.js e o pool de partículas. */
@@ -125,30 +123,45 @@ export class VisualsService implements IVisualsService {
     this.activeParticles = []
   }
 
-  /** @description Limpa todas as partículas ativas, retornando-as ao pool. */
+  /** @description Limpa todas as partículas ativas, retornando-as ao pool sem criar arrays temporários. */
   public clear(): void {
-    while (this.activeParticles.length > 0) {
-      const particle = this.activeParticles.pop()!
-      this.releaseParticle(particle)
+    for (const particle of this.activeParticles) {
+      particle.deactivate()
+      this.particlePool.push(particle)
     }
+    // .length = 0 é mais rápido que splice(0) — reutiliza o array sem realocação
+    this.activeParticles.length = 0
   }
 
-  /** @description Loop de renderização principal para animar partículas e processar efeitos da fila. */
+  /**
+   * @description Loop de renderização principal para animar partículas e processar efeitos da fila.
+   *
+   * Usa EffectQueue.drain() em vez de spread + ref reativo do Pinia:
+   *   - Zero alocação de arrays por frame
+   *   - Zero disparos do sistema de reatividade Vue
+   *
+   * Usa swap-and-pop para liberar partículas mortas em O(1) por remoção
+   * em vez de indexOf O(n) + splice O(n).
+   */
   render(): void {
-    // Processa a fila de efeitos visuais do store
-    const effectsToProcess = [...this.store.visualEffects]
-    this.store.clearVisualEffects()
+    // Drena a fila de efeitos sem criar arrays temporários
+    this.effectQueue.drain(effect => this.processVisualEffect(effect))
 
-    for (const effect of effectsToProcess) {
-      this.processVisualEffect(effect)
-    }
-
-    // Atualiza a animação das partículas ativas
-    for (let i = this.activeParticles.length - 1; i >= 0; i--) {
+    // Atualiza partículas com swap-and-pop: O(1) por remoção, sem indexOf nem splice
+    let i = this.activeParticles.length - 1
+    while (i >= 0) {
       const particle = this.activeParticles[i]
       if (!particle.update()) {
-        this.releaseParticle(particle)
+        particle.deactivate()
+        this.particlePool.push(particle)
+        // Swap com o último elemento e remove — preserva a ordem do restante via iteração reversa
+        const lastIdx = this.activeParticles.length - 1
+        if (i !== lastIdx) {
+          this.activeParticles[i] = this.activeParticles[lastIdx]
+        }
+        this.activeParticles.pop()
       }
+      i--
     }
   }
 
@@ -173,30 +186,32 @@ export class VisualsService implements IVisualsService {
     }
   }
 
-  /** @description Remove texturas menos utilizadas do cache se o limite for excedido. */
+  /**
+   * @description Remove texturas menos utilizadas do cache se o limite for excedido.
+   *
+   * Usa busca linear O(n) em vez de Array.from() + sort() O(n log n) —
+   * mesma semântica LRU sem alocar arrays temporários.
+   */
   private evictCacheIfNeeded(): void {
     if (this.textureCache.size < this.systemPerformance.maxTextureCacheSize) {
       return
     }
-    const sortedByUsage = Array.from(this.textureUsage.entries()).sort((a, b) => a[1] - b[1])
     const evictionCount = Math.floor(this.systemPerformance.maxTextureCacheSize * 0.2)
-    for (let i = 0; i < evictionCount; i++) {
-      const [key] = sortedByUsage[i]
-      const texture = this.textureCache.get(key)
-      if (texture) {
-        texture.destroy()
-        this.textureCache.delete(key)
-        this.textureUsage.delete(key)
+    for (let evicted = 0; evicted < evictionCount; evicted++) {
+      // Encontra a entrada com menor timestamp (LRU) sem criar array intermediário
+      let oldestKey: string | undefined
+      let oldestTime = Infinity
+      for (const [key, time] of this.textureUsage) {
+        if (time < oldestTime) {
+          oldestTime = time
+          oldestKey = key
+        }
+      }
+      if (oldestKey) {
+        this.textureCache.get(oldestKey)?.destroy()
+        this.textureCache.delete(oldestKey)
+        this.textureUsage.delete(oldestKey)
       }
     }
-  }
-
-  /** @description Retorna uma partícula para o pool após o uso. */
-  private releaseParticle(particle: PooledParticle): void {
-    const index = this.activeParticles.indexOf(particle)
-    if (index === -1) return
-    particle.deactivate()
-    this.activeParticles.splice(index, 1)
-    this.particlePool.push(particle)
   }
 }

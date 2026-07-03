@@ -72,17 +72,19 @@ function calculateFingerOpenness(
   return angleRad / Math.PI
 }
 
+// Constante de módulo: evita recriar o array a cada chamada de getThreeFingersOpenness
+const FINGER_NAMES: FingerName[] = ['thumb', 'index', 'middle', 'ring', 'pinky']
+
 /** @description Calcula a abertura da mão com base nos dedos especificados. */
 export function getThreeFingersOpenness(landmarks: NormalizedLandmark[]): number {
   if (!landmarks || landmarks.length !== 21) {
     return 0
   }
-  const fingers: FingerName[] = ['thumb', 'index', 'middle', 'ring', 'pinky']
-  const totalOpenness = fingers.reduce((sum, finger) => {
+  const totalOpenness = FINGER_NAMES.reduce((sum, finger) => {
     const [tipIdx, pipIdx, mcpIdx] = FINGER_LANDMARKS_MAP[finger]
     return sum + calculateFingerOpenness(landmarks[tipIdx], landmarks[pipIdx], landmarks[mcpIdx])
   }, 0)
-  return totalOpenness / fingers.length
+  return totalOpenness / FINGER_NAMES.length
 }
 
 /** @description Calcula o ponto central da palma da mão. */

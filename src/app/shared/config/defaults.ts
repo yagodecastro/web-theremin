@@ -109,11 +109,12 @@ const mediaPipeCoreConfig: MediaPipeConfig = {
     numHands: 2,
     baseOptions: {
       delegate: 'GPU',
-      modelAssetPath:
-        'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task'
+      // Modelo servido localmente — elimina round-trip ao CDN do Google na inicialização
+      modelAssetPath: '/mediapipe/hand_landmarker.task'
     }
   },
-  wasmPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm',
+  // WASM servido localmente de /public/mediapipe/wasm/ (copiado de node_modules em postinstall)
+  wasmPath: '/mediapipe/wasm',
   initTimeout: 1000,
   minHandDetectionConfidence: 0.3,
   minHandPresenceConfidence: 0.5,

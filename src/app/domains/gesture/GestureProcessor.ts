@@ -8,7 +8,7 @@ import type {
 import { IMidiService } from '@/app/domains/midi/IMidiService.ts'
 import { IVisualsService } from '@/app/domains/visuals/IVisualsService.ts'
 import { AppConfig } from '@/app/core'
-import { AppStore } from '@/stores/appStore.ts'
+import { EffectQueue } from '@/app/shared/EffectQueue.ts'
 
 /** @description Processa os dados de gestos da mão e os distribui para os manipuladores apropriados. */
 export class GestureProcessor {
@@ -20,7 +20,7 @@ export class GestureProcessor {
     private appConfig: AppConfig,
     private midiService: IMidiService,
     private visualsService: IVisualsService,
-    private store: AppStore
+    private effectQueue: EffectQueue
   ) {
     this.handlers = [
       new PinchGestureHandler(
@@ -28,24 +28,24 @@ export class GestureProcessor {
         this.visualsService,
         this.appConfig.domains.midi,
         this.appConfig.domains.gestures,
-        this.store
+        this.effectQueue
       ),
       new HandModulationHandler(
         this.midiService,
         this.visualsService,
         this.appConfig.domains.midi,
         this.appConfig.domains.gestures,
-        this.store
+        this.effectQueue
       )
     ].sort((a, b) => this.getPriorityValue(b.priority) - this.getPriorityValue(a.priority))
   }
 
-  /** @description Processa os gestos detectados em um frame. */
-  processGestures(handData: HandLandmarkerResult): void {
+  /** @description Processa os gestos detectados em um frame com o timestamp do rAF. */
+  processGestures(handData: HandLandmarkerResult, timestamp: number): void {
     this.frameCounter++
     for (const handler of this.handlers) {
       if (this.shouldProcessHandler(handler)) {
-        handler.process(handData)
+        handler.process(handData, timestamp)
       }
     }
   }
@@ -76,26 +76,11 @@ export class GestureProcessor {
     }
   }
 
-  /** @description Substitui o serviço de áudio nos handlers, sem recriar o detector. */
+  /** @description Substitui o serviço de áudio nos handlers existentes, sem recriar instâncias. */
   updateMidiService(midiService: IMidiService): void {
     this.midiService = midiService
-    const sortedHandlers = [
-      new PinchGestureHandler(
-        midiService,
-        this.visualsService,
-        this.appConfig.domains.midi,
-        this.appConfig.domains.gestures,
-        this.store
-      ),
-      new HandModulationHandler(
-        midiService,
-        this.visualsService,
-        this.appConfig.domains.midi,
-        this.appConfig.domains.gestures,
-        this.store
-      )
-    ].sort((a, b) => this.getPriorityValue(b.priority) - this.getPriorityValue(a.priority))
-    this.handlers.length = 0
-    this.handlers.push(...sortedHandlers)
+    for (const handler of this.handlers) {
+      handler.updateMidiService(midiService)
+    }
   }
 }

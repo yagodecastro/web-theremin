@@ -17,7 +17,7 @@ export class ServiceOrchestrator {
     private visualsService: IVisualsService,
     private store: AppStore
   ) {
-    this.frameScheduler = new FrameScheduler(this.config, this.store, () => this.processFrame())
+    this.frameScheduler = new FrameScheduler(this.config, this.store, timestamp => this.processFrame(timestamp))
   }
 
   /** @description Inicia o processamento de gestos e o loop principal. */
@@ -40,14 +40,14 @@ export class ServiceOrchestrator {
 
   /**
    * @description Processa um único frame de detecção e processamento de gestos.
-   * Chamado pelo FrameScheduler a cada frame.
+   * Chamado pelo FrameScheduler a cada frame com o timestamp do rAF.
    */
-  private async processFrame(): Promise<void> {
+  private async processFrame(timestamp: number): Promise<void> {
     if (!this.store.isRunning) return
     try {
       const handData = await this.gestureService.detectHands()
       if (handData) {
-        this.gestureService.processGestures(handData)
+        this.gestureService.processGestures(handData, timestamp)
       }
       this.visualsService.render()
     } catch (error) {

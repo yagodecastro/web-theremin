@@ -3,7 +3,6 @@ import { computed, reactive, ref } from 'vue'
 import { AVAILABLE_SCALES, CHROMATIC_NOTES } from '@/app/shared/utils/musicTheoryUtils'
 import type { AppController } from '@/app/core'
 import { LogType } from 'vite'
-import { VisualEffect } from '@/app/domains/visuals'
 
 /** @description Interface para uma entrada de log. */
 export interface LogEntry {
@@ -32,6 +31,7 @@ export const useAppStore = defineStore('appStore', () => {
   const gestureActive = ref(false)
   const lastGesturePosition = ref<{ x: number; y: number } | null>(null)
   const showCamera = ref(false)
+  const cameraOpacity = ref(0.2)
   const isFullscreen = ref(false)
   const debugInfoValue = reactive<Array<{ key: string; value: string | undefined }>>([])
   const devices = ref({
@@ -53,7 +53,6 @@ export const useAppStore = defineStore('appStore', () => {
     availableTonics: CHROMATIC_NOTES
   })
   const systemLogs = ref<LogEntry[]>([])
-  const visualEffects = ref<VisualEffect[]>([])
   let logIdCounter = 0
 
   const isReady = computed(() => {
@@ -159,15 +158,6 @@ export const useAppStore = defineStore('appStore', () => {
       systemLogs.value.pop()
     }
   }
-  /** @description Adiciona um efeito visual à fila para ser processado. */
-  const addVisualEffect = (effect: VisualEffect) => {
-    visualEffects.value.push(effect)
-  }
-
-  /** @description Limpa todos os efeitos visuais da fila. */
-  const clearVisualEffects = () => {
-    visualEffects.value = []
-  }
   /** @description Seleciona um dispositivo de saída MIDI. */
   const selectMidiOutput = (deviceName: string) => {
     devices.value.midi.selectedMidiOutput = deviceName
@@ -205,6 +195,10 @@ export const useAppStore = defineStore('appStore', () => {
   const toggleCamera = () => {
     showCamera.value = !showCamera.value
   }
+  const setCameraOpacity = (opacity: number) => {
+    cameraOpacity.value = opacity
+  }
+
   /** @description Sincroniza o estado de fullscreen com a API do browser. */
   const setFullscreen = (v: boolean) => {
     isFullscreen.value = v
@@ -227,12 +221,12 @@ export const useAppStore = defineStore('appStore', () => {
     gestureActive,
     lastGesturePosition,
     showCamera,
+    cameraOpacity,
     isFullscreen,
     devices,
     musicalConfig,
     systemLogs,
     debugInfo,
-    visualEffects,
     isReady,
     isRunning,
     isInitializing,
@@ -246,8 +240,6 @@ export const useAppStore = defineStore('appStore', () => {
     setMidiOutputs,
     setCameras,
     addSystemLog,
-    addVisualEffect,
-    clearVisualEffects,
     selectMidiOutput,
     selectCamera,
     selectScale,
@@ -255,6 +247,7 @@ export const useAppStore = defineStore('appStore', () => {
     setBaseOctave,
     setOctaveRange,
     toggleCamera,
+    setCameraOpacity,
     setFullscreen,
     addDebugInfo,
     setAudioMode

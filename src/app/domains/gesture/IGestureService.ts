@@ -7,8 +7,8 @@ export interface IGestureService {
   initialize(videoElement: HTMLVideoElement): Promise<void>
   /** @description Detecta mãos no frame de vídeo atual. */
   detectHands(): Promise<HandLandmarkerResult | null>
-  /** @description Processa os gestos detectados em um frame. */
-  processGestures(handData: HandLandmarkerResult): void
+  /** @description Processa os gestos detectados em um frame com o timestamp do rAF. */
+  processGestures(handData: HandLandmarkerResult, timestamp: number): void
   /** @description Troca a câmera ativa. */
   switchCamera(deviceId: string): Promise<void>
   /** @description Define um callback para verificação de saúde. */

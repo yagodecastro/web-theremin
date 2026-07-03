@@ -5,7 +5,7 @@ import { IMidiService } from '@/app/domains/midi/IMidiService.ts'
 import { IVisualsService } from '@/app/domains/visuals/IVisualsService.ts'
 import { MidiConfig } from '@/app/domains/midi'
 import { GestureConfig } from '@/app/domains/gesture'
-import { AppStore } from '@/stores/appStore.ts'
+import { EffectQueue } from '@/app/shared/EffectQueue.ts'
 
 /** @description Estado do gesto de pinça. */
 export interface PinchState {
@@ -31,13 +31,13 @@ export class PinchGestureHandler extends BaseGestureHandler {
     visualsService: IVisualsService,
     midiConfig: MidiConfig,
     gestureConfig: GestureConfig,
-    private store: AppStore
+    effectQueue: EffectQueue
   ) {
-    super(midiService, visualsService, midiConfig, gestureConfig)
+    super(midiService, visualsService, midiConfig, gestureConfig, effectQueue)
   }
 
   /** @description Processa os dados da mão para detectar e manipular o gesto de pinça. */
-  process(handData: HandLandmarkerResult): void {
+  process(handData: HandLandmarkerResult, _timestamp: number): void {
     const leftHandLandmarks = this.getLandmarksByHand(handData, 'Left')
     if (!leftHandLandmarks) {
       this.handlePinchRelease()
@@ -116,9 +116,9 @@ export class PinchGestureHandler extends BaseGestureHandler {
     return this.midiService.gestureToNote(position.x, position.y)
   }
 
-  /** @description Adiciona um efeito visual de explosão à fila do store. */
+  /** @description Adiciona um efeito visual de explosão à fila de efeitos. */
   private createPinchBurstEffect(position: { x: number; y: number }, intensity: number): void {
-    this.store.addVisualEffect({
+    this.effectQueue.push({
       type: 'pinchBurst',
       x: position.x,
       y: position.y,

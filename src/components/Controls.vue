@@ -165,11 +165,24 @@ const toggleAudioMode = () => {
         variant="danger"
         @click="emit('panic')"
       />
-      <ActionButton
-        label="CAMERA"
-        :variant="store.showCamera ? 'primary' : 'secondary'"
-        @click="store.toggleCamera"
-      />
+      <div class="flex flex-col gap-1">
+        <ActionButton
+          label="CAMERA"
+          :variant="store.showCamera ? 'primary' : 'secondary'"
+          class="flex-1"
+          @click="store.toggleCamera"
+        />
+        <input
+          v-if="store.showCamera"
+          type="range"
+          min="0"
+          max="1"
+          step="0.05"
+          :value="store.cameraOpacity"
+          class="w-full h-2 mt-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-neon-cyan"
+          @input="e => store.setCameraOpacity(Number((e.target as HTMLInputElement).value))"
+        />
+      </div>
       <ActionButton
         :disabled="!store.isRunning"
         :label="store.isFullscreen ? 'EXIT FULL' : 'FULLSCREEN'"

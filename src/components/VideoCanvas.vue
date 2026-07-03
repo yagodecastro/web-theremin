@@ -36,22 +36,20 @@ defineExpose({ toggleFullscreen })
 <template>
   <div
     ref="container"
-    class="max-w-5xl mx-auto aspect-4/3 max-h-full relative w-full h-full rounded-lg overflow-hidden"
+    class="max-w-5xl mx-auto aspect-4/3 max-h-full relative w-full h-full rounded-lg overflow-hidden bg-black"
     @dblclick="toggleFullscreen"
   >
     <video
       ref="videoElement"
       class="absolute inset-0 w-full h-full object-cover -scale-x-100"
+      :style="{ opacity: store.showCamera ? store.cameraOpacity : 0 }"
       autoplay
       muted
       playsinline
     />
     <canvas
       ref="visualsContainer"
-      :class="[
-        'absolute inset-0 w-full h-full object-cover -scale-x-100 pointer-events-none',
-        { 'opacity-90': store.showCamera, 'opacity-100': !store.showCamera }
-      ]"
+      class="absolute inset-0 w-full h-full object-cover -scale-x-100 pointer-events-none"
     />
 
     <div class="absolute top-4 right-4 flex flex-col gap-2">

@@ -9,13 +9,14 @@ import { BaseGestureHandler, type HandlerPriority } from './BaseGestureHandler.t
 import { GestureConfig } from '@/app/domains/gesture'
 import { IMidiService } from '@/app/domains/midi/IMidiService.ts'
 import { IVisualsService } from '@/app/domains/visuals/IVisualsService.ts'
-import { AppStore } from '@/stores/appStore.ts'
+import { EffectQueue } from '@/app/shared/EffectQueue.ts'
 
 /** @description Manipulador para gestos de modulação da mão, como abertura e posição. */
 export class HandModulationHandler extends BaseGestureHandler {
   readonly priority: HandlerPriority = 'medium'
   private lastValues: Map<string, { x: number; y: number; openness: number }> = new Map()
-  private lastProcessTime: Map<string, number> = new Map()
+  // Guarda o timestamp do último processamento MIDI por mão (em DOMHighResTimeStamp)
+  private lastProcessTimestamp: Map<string, number> = new Map()
   private readonly throttleInterval: number = 16 // ms, aprox 60fps
 
   constructor(
@@ -23,16 +24,19 @@ export class HandModulationHandler extends BaseGestureHandler {
     visualsService: IVisualsService,
     midiConfig: MidiConfig,
     gestureConfig: GestureConfig,
-    private store: AppStore
+    effectQueue: EffectQueue
   ) {
-    super(midiService, visualsService, midiConfig, gestureConfig)
+    super(midiService, visualsService, midiConfig, gestureConfig, effectQueue)
     // TODO: Idealmente, o valor de throttleInterval viria de gestureConfig
     // this.throttleInterval = gestureConfig.throttleInterval;
   }
 
-  /** @description Processa os dados de modulação da mão para ambas as mãos, com throttling. */
-  process(handData: HandLandmarkerResult): void {
-    const now = Date.now()
+  /** @description Processa os dados de modulação da mão para ambas as mãos, com throttling.
+   *
+   * Usa o timestamp do rAF (DOMHighResTimeStamp) em vez de Date.now() —
+   * maior precisão e menor overhead no hot path.
+   */
+  process(handData: HandLandmarkerResult, timestamp: number): void {
     handData.handednesses.forEach((hand, index) => {
       const landmarks = handData.landmarks[index]
       const handName = hand[0]?.categoryName as HandednessType
@@ -46,14 +50,14 @@ export class HandModulationHandler extends BaseGestureHandler {
         this.createHandVisualEffect(landmarks, openness, handName)
       }
 
-      const lastTime = this.lastProcessTime.get(handName) ?? 0
-      if (now - lastTime < this.throttleInterval) {
+      const lastTimestamp = this.lastProcessTimestamp.get(handName) ?? 0
+      if (timestamp - lastTimestamp < this.throttleInterval) {
         return // Pula o processamento MIDI se estiver dentro do intervalo de throttle.
       }
 
       if (this.hasSignificantChange(landmarks, handName)) {
         this.processMidi(landmarks, handName, openness)
-        this.lastProcessTime.set(handName, now)
+        this.lastProcessTimestamp.set(handName, timestamp)
       }
     })
   }
@@ -102,14 +106,14 @@ export class HandModulationHandler extends BaseGestureHandler {
     this.midiService.sendCC(cc, value * this.midiConfig.maxValue)
   }
 
-  /** @description Adiciona um efeito visual de modulação da mão à fila do store. */
+  /** @description Adiciona um efeito visual de modulação da mão à fila de efeitos. */
   private createHandVisualEffect(
     landmarks: NormalizedLandmark[],
     threeFingerOpenness: number,
     handName: HandednessType
   ): void {
     const middleFingerBase = getPalmCenter(landmarks)
-    this.store.addVisualEffect({
+    this.effectQueue.push({
       type: 'handModulation',
       x: middleFingerBase.x,
       y: middleFingerBase.y,

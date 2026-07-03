@@ -27,18 +27,22 @@ let appInstance: AppController | null = null
  * e a inicialização ainda não tiver ocorrido.
  */
 const tryInitializeSystem = async () => {
-  // Logs detalhados de diagnóstico
-  store.addSystemLog('info', `App.vue: Verificando condições de inicialização...`)
-  store.addSystemLog('info', `App.vue: Video element ready: ${!!videoElement.value}`)
-  store.addSystemLog('info', `App.vue: Canvas element ready: ${!!visualsCanvas.value}`)
-  store.addSystemLog('info', `App.vue: Current status: ${store.status}`)
+  // Logs detalhados de diagnóstico só em desenvolvimento
+  if (import.meta.env.DEV) {
+    store.addSystemLog('info', `App.vue: Verificando condições de inicialização...`)
+    store.addSystemLog('info', `App.vue: Video element ready: ${!!videoElement.value}`)
+    store.addSystemLog('info', `App.vue: Canvas element ready: ${!!visualsCanvas.value}`)
+    store.addSystemLog('info', `App.vue: Current status: ${store.status}`)
+  }
 
   if (videoElement.value && visualsCanvas.value && store.status === 'idle') {
     try {
-      store.addSystemLog(
-        'info',
-        'AppController.vue: Iniciando construção da instância AppController...'
-      )
+      if (import.meta.env.DEV) {
+        store.addSystemLog(
+          'info',
+          'AppController.vue: Iniciando construção da instância AppController...'
+        )
+      }
       const app = new AppController(defaultConfig, store, store.audioMode)
       appInstance = app
       store.setAppSystem(app)
@@ -52,22 +56,26 @@ const tryInitializeSystem = async () => {
       store.setMidiOutputs(midiOutputs)
       store.setCameras(cameras)
 
-      store.addSystemLog(
-        'info',
-        `App.vue: Dispositivos detectados - MIDI: ${midiOutputs.length}, Câmeras: ${cameras.length}`
-      )
       store.addSystemLog('info', 'AppController.vue: Sistema inicializado com sucesso.')
 
-      // Log final do diagnóstico
-      const diagnostics = store.systemDiagnostics
-      store.addSystemLog('info', `App.vue: Diagnóstico final - ${JSON.stringify(diagnostics)}`)
+      // Diagnóstico final só em DEV (JSON.stringify tem custo significativo)
+      if (import.meta.env.DEV) {
+        store.addSystemLog(
+          'info',
+          `App.vue: Dispositivos detectados - MIDI: ${midiOutputs.length}, Câmeras: ${cameras.length}`
+        )
+        const diagnostics = store.systemDiagnostics
+        store.addSystemLog('info', `App.vue: Diagnóstico final - ${JSON.stringify(diagnostics)}`)
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       store.addSystemLog('error', `App.vue: Erro crítico na inicialização: ${errorMessage}`)
-      store.addSystemLog(
-        'error',
-        `App.vue: Stack trace: ${error instanceof Error ? error.stack : 'N/A'}`
-      )
+      if (import.meta.env.DEV) {
+        store.addSystemLog(
+          'error',
+          `App.vue: Stack trace: ${error instanceof Error ? error.stack : 'N/A'}`
+        )
+      }
     }
   } else {
     if (store.status !== 'idle') {
@@ -100,15 +108,15 @@ const handleStart = async () => {
       store.addSystemLog('error', `Erro ao iniciar sessão: ${errorMessage}`)
     }
   } else {
-    // Diagnóstico detalhado do problema
-    const diagnostics = store.systemDiagnostics
     store.addSystemLog('warn', 'AppController.vue: Sistema não está pronto para iniciar.')
-    store.addSystemLog('warn', `App.vue: Diagnóstico detalhado: ${JSON.stringify(diagnostics)}`)
-
+    // Diagnóstico detalhado só em DEV (JSON.stringify tem custo)
+    if (import.meta.env.DEV) {
+      const diagnostics = store.systemDiagnostics
+      store.addSystemLog('warn', `App.vue: Diagnóstico detalhado: ${JSON.stringify(diagnostics)}`)
+    }
     if (!appInstance) {
       store.addSystemLog('error', 'AppController.vue: Instância da aplicação não foi criada')
     }
-
     if (!store.isReady) {
       store.addSystemLog(
         'error',

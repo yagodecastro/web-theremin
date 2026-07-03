@@ -5,7 +5,7 @@ import { IGestureService } from '@/app/domains/gesture/IGestureService'
 import { AppConfig } from '@/app/core'
 import { IMidiService } from '@/app/domains/midi/IMidiService'
 import { IVisualsService } from '@/app/domains/visuals/IVisualsService'
-import { AppStore } from '@/stores/appStore'
+import { EffectQueue } from '@/app/shared/EffectQueue'
 
 /** @description Serviço de gestos unificado que gerencia detecção e processamento. */
 export class GestureService implements IGestureService {
@@ -17,10 +17,10 @@ export class GestureService implements IGestureService {
     config: AppConfig,
     midiService: IMidiService,
     visualsService: IVisualsService,
-    store: AppStore
+    effectQueue: EffectQueue
   ) {
     this.detector = new GestureDetector(config.core.webcam, config.core.mediaPipe)
-    this.processor = new GestureProcessor(config, midiService, visualsService, store)
+    this.processor = new GestureProcessor(config, midiService, visualsService, effectQueue)
   }
 
   /** @description Inicializa o serviço de gestos. */
@@ -33,9 +33,9 @@ export class GestureService implements IGestureService {
     return this.detector.detectHands()
   }
 
-  /** @description Processa os gestos detectados em um frame. */
-  processGestures(handData: HandLandmarkerResult): void {
-    this.processor.processGestures(handData)
+  /** @description Processa os gestos detectados em um frame com o timestamp do rAF. */
+  processGestures(handData: HandLandmarkerResult, timestamp: number): void {
+    this.processor.processGestures(handData, timestamp)
   }
 
   /** @description Troca a câmera ativa. */

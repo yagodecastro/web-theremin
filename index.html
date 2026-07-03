@@ -40,9 +40,14 @@
     <meta name="twitter:image" content="https://yagodecastro.github.io/web-theremin/screenshot.png" />
 
     <meta name="google-site-verification" content="gn8bJIDbPMJijtRBqHKYa6W0fLO3nLlGA9IDJB9KBJg" />
+    <!-- Prefetch de DNS para o CDN de fallback do MediaPipe -->
+    <link rel="dns-prefetch" href="https://storage.googleapis.com" />
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
   </head>
   <body class="bg-retro-blue">
     <div id="app"></div>
+    <!-- modulepreload instrui o browser a buscar e parsear o módulo antes da execução -->
+    <link rel="modulepreload" href="/src/main.ts" />
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

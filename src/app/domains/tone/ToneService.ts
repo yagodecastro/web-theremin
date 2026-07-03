@@ -24,6 +24,7 @@ export class ToneService implements IMidiService {
   private filter: Tone.Filter
   private delay: Tone.FeedbackDelay
   private reverb: Tone.Reverb
+  private limiter: Tone.Limiter
   private midiScale: (number | null)[] = []
   private isConnected = false
 
@@ -33,6 +34,7 @@ export class ToneService implements IMidiService {
     this.filter = new Tone.Filter({ frequency: 4000, type: 'lowpass', Q: 1 })
     this.delay = new Tone.FeedbackDelay({ delayTime: '8n', feedback: 0.3, wet: 0 })
     this.reverb = new Tone.Reverb({ decay: 2.5, wet: 0.15 })
+    this.limiter = new Tone.Limiter(-2) // Limiter em -2dB para evitar clipping digital duro
 
     this.synth = new Tone.MonoSynth({
       oscillator: { type: 'sawtooth' },
@@ -46,6 +48,7 @@ export class ToneService implements IMidiService {
       this.filter,
       this.delay,
       this.reverb,
+      this.limiter,
       Tone.getDestination()
     )
 
@@ -177,6 +180,7 @@ export class ToneService implements IMidiService {
     this.filter.dispose()
     this.delay.dispose()
     this.reverb.dispose()
+    this.limiter.dispose()
     this.isConnected = false
   }
 
