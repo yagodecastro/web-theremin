@@ -60,8 +60,10 @@ export class VisualsService implements IVisualsService {
         this.videoSprite = new Sprite(videoTexture)
         this.videoSprite.width = this.canvasConfig.width
         this.videoSprite.height = this.canvasConfig.height
+        // Removemos o flip interno do WebGL porque o canvas inteiro 
+        // já é flipado via CSS (-scale-x-100) para espelhar a imagem corretamente!
         this.app.stage.addChild(this.videoSprite)
-
+        
         this.asciiFilter = new AsciiFilter(12)
       }
 

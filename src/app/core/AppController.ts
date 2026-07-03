@@ -40,10 +40,8 @@ export class AppController {
   ): Promise<{ midiOutputs: string[]; cameras: Array<{ deviceId: string; label: string }> }> {
     this.store.setStatus('initializing')
     try {
-      await Promise.all([
-        this.gestureService.initialize(videoElement),
-        this.visualsService.initialize(visualsCanvas, videoElement)
-      ])
+      await this.gestureService.initialize(videoElement)
+      await this.visualsService.initialize(visualsCanvas, videoElement)
       const devices = await this.detectAvailableDevices()
       await this.connectMidi()
       this.store.setStatus('ready')
