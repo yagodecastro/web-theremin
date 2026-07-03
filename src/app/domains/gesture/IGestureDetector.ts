@@ -1,9 +1,11 @@
-import { HandLandmarkerResult } from '@mediapipe/tasks-vision'
+import { HandLandmarkerResult, FaceDetectorResult } from '@mediapipe/tasks-vision'
 
 /** @description Interface para o serviço de detecção de gestos. */
 export interface IGestureDetector {
   /** @description Detecta mãos no frame de vídeo atual. */
   detectHands(): Promise<HandLandmarkerResult | null>
+  /** @description Detecta faces no frame de vídeo atual. */
+  detectFace(): Promise<FaceDetectorResult | null>
   /** @description Troca a câmera ativa. */
   switchCamera(deviceId: string): Promise<void>
   /** @description Define um callback para verificação de saúde. */

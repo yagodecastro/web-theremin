@@ -21,8 +21,21 @@ export interface HandModulationEffectData {
   handedness: HandednessType
 }
 
+/** @description Dados para o rastreamento dos olhos. */
+export interface EyeTrackEffectData {
+  type: 'eyeTrack'
+  leftEye: { x: number; y: number } | null
+  rightEye: { x: number; y: number } | null
+}
+
 /** @description União de todos os tipos de efeitos visuais possíveis. */
-export type VisualEffect = PinchBurstEffectData | HandModulationEffectData
+export type VisualEffect = PinchBurstEffectData | HandModulationEffectData | EyeEffectData
+
+export interface EyeEffectData {
+  type: 'eyeTrack'
+  leftEye: { x: number; y: number } | null
+  rightEye: { x: number; y: number } | null
+}
 
 /** @description Configurações para efeitos visuais. */
 export interface VisualEffectsConfig {

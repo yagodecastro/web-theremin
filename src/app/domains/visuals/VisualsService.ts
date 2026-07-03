@@ -29,6 +29,9 @@ export class VisualsService implements IVisualsService {
   private rgbSplitFilter: RGBSplitFilter | null = null
   private time: number = 0
   private interactionIntensity: number = 0 // Mede a atividade das mãos para modular a câmera
+  private currentLeftEye: { x: number; y: number } | null = null
+  private currentRightEye: { x: number; y: number } | null = null
+  private eyeDetectionTimeout: number = 0
 
   constructor(
     public readonly canvasConfig: CanvasConfig,
@@ -216,9 +219,16 @@ export class VisualsService implements IVisualsService {
    */
   render(): void {
     const mode = this.getPoeticMode()
-    
+
     // Decai a intensidade suavemente se as mãos estiverem paradas
     this.interactionIntensity = Math.max(0, this.interactionIntensity - 0.02)
+    
+    // Decai o timeout de detecção dos olhos para limpá-los se a pessoa sair da câmera
+    this.eyeDetectionTimeout++
+    if (this.eyeDetectionTimeout > 15) {
+      this.currentLeftEye = null
+      this.currentRightEye = null
+    }
     
     // Atualiza o sprite de vídeo
     if (this.videoSprite) {
@@ -261,6 +271,9 @@ export class VisualsService implements IVisualsService {
 
     if (this.constellationGraphics) {
       this.constellationGraphics.clear()
+      if ((mode === 'synesthesia' || mode === 'constellation') && (this.currentLeftEye || this.currentRightEye)) {
+        this.drawEyeEffects(mode)
+      }
     }
 
     // Fading overlay para sinestesia (rastro)
@@ -293,6 +306,16 @@ export class VisualsService implements IVisualsService {
 
   /** @description Processa um único efeito visual da fila. */
   private processVisualEffect(effect: VisualEffect): void {
+    if (effect.type === 'eyeTrack') {
+      const eyeEffect = effect as import('@/app/domains/visuals/index.ts').EyeEffectData
+      if (eyeEffect.leftEye || eyeEffect.rightEye) {
+        this.currentLeftEye = eyeEffect.leftEye
+        this.currentRightEye = eyeEffect.rightEye
+        this.eyeDetectionTimeout = 0
+      }
+      return
+    }
+
     // Aumenta a intensidade global quando há atividade (limitado a 1)
     this.interactionIntensity = Math.min(1, this.interactionIntensity + 0.1)
     
@@ -356,6 +379,57 @@ export class VisualsService implements IVisualsService {
     // Draw nodes
     for (const p of landmarks) {
       g.circle(p.x * w, p.y * h, 3).fill({ color: 0xffffff, alpha: 0.8 })
+    }
+  }
+
+  private drawEyeEffects(mode: 'classic' | 'synesthesia' | 'constellation'): void {
+    if (!this.constellationGraphics) return
+    const g = this.constellationGraphics
+    const w = this.canvasConfig.width
+    const h = this.canvasConfig.height
+
+    const left = this.currentLeftEye
+    const right = this.currentRightEye
+
+    if (mode === 'synesthesia') {
+      const pulse = 1 + Math.sin(this.time * 5) * 0.3
+      const hue = (this.time * 100) % 360
+
+      if (left) {
+        g.setStrokeStyle({ width: 0 })
+        g.circle(left.x * w, left.y * h, 25 * pulse).fill({ color: new Color(`hsl(${hue}, 100%, 50%)`), alpha: 0.15 })
+        g.circle(left.x * w, left.y * h, 8 * pulse).fill({ color: 0xffffff, alpha: 0.4 })
+        g.circle(left.x * w, left.y * h, 3).fill({ color: new Color(`hsl(${(hue + 180) % 360}, 100%, 50%)`), alpha: 0.8 })
+      }
+      if (right) {
+        g.setStrokeStyle({ width: 0 })
+        g.circle(right.x * w, right.y * h, 25 * pulse).fill({ color: new Color(`hsl(${hue}, 100%, 50%)`), alpha: 0.15 })
+        g.circle(right.x * w, right.y * h, 8 * pulse).fill({ color: 0xffffff, alpha: 0.4 })
+        g.circle(right.x * w, right.y * h, 3).fill({ color: new Color(`hsl(${(hue + 180) % 360}, 100%, 50%)`), alpha: 0.8 })
+      }
+    } else if (mode === 'constellation') {
+      g.setStrokeStyle({ width: 1, color: 0x00ffff, alpha: 0.8 })
+      
+      const drawCross = (eye: { x: number; y: number }) => {
+        const ex = eye.x * w
+        const ey = eye.y * h
+        g.moveTo(ex - 15, ey)
+        g.lineTo(ex + 15, ey)
+        g.moveTo(ex, ey - 15)
+        g.lineTo(ex, ey + 15)
+        
+        // Losango
+        g.moveTo(ex, ey - 8)
+        g.lineTo(ex + 8, ey)
+        g.lineTo(ex, ey + 8)
+        g.lineTo(ex - 8, ey)
+        g.lineTo(ex, ey - 8)
+        
+        g.circle(ex, ey, 2).fill({ color: 0x00ffff, alpha: 0.9 })
+      }
+      
+      if (left) drawCross(left)
+      if (right) drawCross(right)
     }
   }
 

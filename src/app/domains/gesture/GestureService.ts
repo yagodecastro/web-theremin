@@ -1,4 +1,4 @@
-import { HandLandmarkerResult } from '@mediapipe/tasks-vision'
+import { HandLandmarkerResult, FaceDetectorResult } from '@mediapipe/tasks-vision'
 import { GestureDetector } from '@/app/domains/gesture/GestureDetector'
 import { GestureProcessor } from '@/app/domains/gesture/GestureProcessor'
 import { IGestureService } from '@/app/domains/gesture/IGestureService'
@@ -17,7 +17,7 @@ export class GestureService implements IGestureService {
     config: AppConfig,
     midiService: IMidiService,
     visualsService: IVisualsService,
-    effectQueue: EffectQueue
+    private readonly effectQueue: EffectQueue
   ) {
     this.detector = new GestureDetector(config.core.webcam, config.core.mediaPipe)
     this.processor = new GestureProcessor(config, midiService, visualsService, effectQueue)
@@ -30,7 +30,38 @@ export class GestureService implements IGestureService {
 
   /** @description Detecta mãos no frame de vídeo atual. */
   async detectHands(): Promise<HandLandmarkerResult | null> {
-    return this.detector.detectHands()
+    const handData = await this.detector.detectHands()
+    
+    // Detecta a face em paralelo de forma otimizada
+    const faceData = await this.detector.detectFace()
+    if (faceData) {
+      this.processEyes(faceData)
+    }
+    
+    return handData
+  }
+
+  /** @description Extrai as coordenadas dos olhos e as envia para a fila de efeitos. */
+  private processEyes(faceData: FaceDetectorResult): void {
+    if (!faceData || !faceData.detections || faceData.detections.length === 0) {
+      this.effectQueue.push({
+        type: 'eyeTrack',
+        leftEye: null,
+        rightEye: null
+      })
+      return
+    }
+
+    const detection = faceData.detections[0]
+    if (detection && detection.keypoints && detection.keypoints.length >= 2) {
+      const kp0 = detection.keypoints[0]
+      const kp1 = detection.keypoints[1]
+      this.effectQueue.push({
+        type: 'eyeTrack',
+        leftEye: { x: kp1.x, y: kp1.y },
+        rightEye: { x: kp0.x, y: kp0.y }
+      })
+    }
   }
 
   /** @description Processa os gestos detectados em um frame com o timestamp do rAF. */

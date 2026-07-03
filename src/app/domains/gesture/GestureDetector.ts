@@ -1,4 +1,4 @@
-import { FilesetResolver, HandLandmarker, HandLandmarkerResult } from '@mediapipe/tasks-vision'
+import { FilesetResolver, HandLandmarker, HandLandmarkerResult, FaceDetector, FaceDetectorResult } from '@mediapipe/tasks-vision'
 import { IGestureDetector } from '@/app/domains/gesture/IGestureDetector.ts'
 import { normalizeHandLandmarks } from '@/app/shared/utils/utils'
 import { MediaPipeConfig, WebcamConfig } from '@/app/core'
@@ -6,12 +6,14 @@ import { MediaPipeConfig, WebcamConfig } from '@/app/core'
 /** @description Serviço para detecção gestual que combina webcam e MediaPipe. */
 export class GestureDetector implements IGestureDetector {
   private gestureRecognizer: HandLandmarker | null = null
+  private faceDetector: FaceDetector | null = null
   private videoElement: HTMLVideoElement | null = null
   private stream: MediaStream | null = null
   private isReady = false
   private isProcessing = false
   private isMediaPipeReady = false
   private lastVideoTime = -1
+  private faceDetectCounter = 0
   private healthCheckCallback?: (error: Error) => void
 
   constructor(
@@ -91,6 +93,10 @@ export class GestureDetector implements IGestureDetector {
       vision,
       this.mediaPipeConfig.handLandmarkerOptions
     )
+    this.faceDetector = await FaceDetector.createFromModelPath(
+      vision,
+      'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite'
+    )
     await new Promise(resolve => setTimeout(resolve, this.mediaPipeConfig.initTimeout))
     this.isMediaPipeReady = true
   }
@@ -135,6 +141,10 @@ export class GestureDetector implements IGestureDetector {
       this.gestureRecognizer.close()
       this.gestureRecognizer = null
     }
+    if (this.faceDetector) {
+      this.faceDetector.close()
+      this.faceDetector = null
+    }
     if (this.stream) {
       this.stream.getTracks().forEach(track => track.stop())
       this.stream = null
@@ -146,6 +156,32 @@ export class GestureDetector implements IGestureDetector {
     this.isProcessing = false
     this.isMediaPipeReady = false
     this.lastVideoTime = -1
+  }
+
+  /** @description Detecta faces no frame de vídeo atual (apenas olhos, etc.). */
+  async detectFace(): Promise<FaceDetectorResult | null> {
+    if (
+      !this.isReady ||
+      !this.faceDetector ||
+      !this.videoElement ||
+      !this.isMediaPipeReady
+    ) {
+      return null
+    }
+
+    // Executa a cada 2 frames para otimização de performance (throttling)
+    this.faceDetectCounter++
+    if (this.faceDetectCounter % 2 !== 0) {
+      return null
+    }
+
+    try {
+      const timestamp = performance.now()
+      return this.faceDetector.detectForVideo(this.videoElement, timestamp)
+    } catch (error) {
+      console.error('Erro ao processar face:', error)
+      return null
+    }
   }
 
   /** @description Valida se os dados de landmarks da mão são consistentes. */
