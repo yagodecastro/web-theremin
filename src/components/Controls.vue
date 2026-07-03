@@ -3,6 +3,23 @@ import { computed } from 'vue'
 import { useAppStore } from '@/stores/appStore'
 import ActionButton from './shared/ActionButton.vue'
 import LabeledSelect from './shared/LabeledSelect.vue'
+import {
+  Music,
+  ListMusic,
+  ArrowDownUp,
+  Maximize2,
+  PlugZap,
+  Video,
+  AudioLines,
+  Play,
+  RotateCcw,
+  Square,
+  Wrench,
+  TriangleAlert,
+  Camera,
+  Maximize,
+  Minimize
+} from 'lucide-vue-next'
 
 const store = useAppStore()
 
@@ -60,6 +77,7 @@ const toggleAudioMode = () => {
         :options="tonicOptions"
         label="TONIC"
         variant="purple"
+        :icon="Music"
         @update:model-value="store.setTonic"
       />
       <LabeledSelect
@@ -67,6 +85,7 @@ const toggleAudioMode = () => {
         :options="scaleOptions"
         label="SCALE"
         variant="purple"
+        :icon="ListMusic"
         @update:model-value="store.selectScale"
       />
       <LabeledSelect
@@ -74,6 +93,7 @@ const toggleAudioMode = () => {
         :options="baseOctaveOptions"
         label="BASE OCT"
         variant="purple"
+        :icon="ArrowDownUp"
         @update:model-value="v => store.setBaseOctave(Number(v))"
       />
       <LabeledSelect
@@ -81,6 +101,7 @@ const toggleAudioMode = () => {
         :options="octaveRangeOptions"
         label="RANGE"
         variant="purple"
+        :icon="Maximize2"
         @update:model-value="v => store.setOctaveRange(Number(v))"
       />
     </div>
@@ -90,6 +111,7 @@ const toggleAudioMode = () => {
         :label="store.audioMode === 'tone' ? 'TONE.JS' : 'MIDI'"
         :variant="store.audioMode === 'tone' ? 'primary' : 'warning'"
         :disabled="store.isBusy"
+        :icon="AudioLines"
         @click="toggleAudioMode"
       />
       <LabeledSelect
@@ -99,6 +121,7 @@ const toggleAudioMode = () => {
         :disabled="store.isBusy"
         label="MIDI OUT"
         variant="amber"
+        :icon="PlugZap"
         @update:model-value="
           value => {
             store.selectMidiOutput(value)
@@ -108,8 +131,9 @@ const toggleAudioMode = () => {
       />
       <div
         v-else
-        class="flex items-center px-3 py-1 rounded border border-neon-cyan/30 text-neon-cyan/60 text-xs font-typewriter uppercase tracking-wider"
+        class="flex items-center gap-2 px-3 py-1 rounded border border-neon-cyan/30 text-neon-cyan/60 text-xs font-typewriter uppercase tracking-wider"
       >
+        <AudioLines class="w-4 h-4" />
         DIRECT BROWSER AUDIO
       </div>
       <LabeledSelect
@@ -118,6 +142,7 @@ const toggleAudioMode = () => {
         :disabled="store.isBusy"
         label="CAMERA"
         variant="cyan"
+        :icon="Video"
         @update:model-value="
           async value => {
             try {
@@ -145,24 +170,28 @@ const toggleAudioMode = () => {
         :disabled="store.isBusy && !store.hasError"
         :label="store.hasError ? 'RESTART SYSTEM' : 'START'"
         :variant="store.hasError ? 'warning' : store.isRunning ? 'secondary' : 'primary'"
+        :icon="store.hasError || store.isRunning ? RotateCcw : Play"
         @click="handleStartClick"
       />
       <ActionButton
         :disabled="!store.isRunning || store.isBusy"
         :label="'STOP'"
         :variant="'danger'"
+        :icon="Square"
         @click="emit('stop')"
       />
       <ActionButton
         v-if="store.hasError"
         label="RECOVERY"
         variant="warning"
+        :icon="Wrench"
         @click="emit('recovery')"
       />
       <ActionButton
         :disabled="store.audioMode === 'midi' && !store.devices.midi.selectedMidiOutput"
         label="PANIC"
         variant="danger"
+        :icon="TriangleAlert"
         @click="emit('panic')"
       />
       <div class="flex flex-col gap-1">
@@ -170,6 +199,7 @@ const toggleAudioMode = () => {
           label="CAMERA"
           :variant="store.showCamera ? 'primary' : 'secondary'"
           class="flex-1"
+          :icon="Camera"
           @click="store.toggleCamera"
         />
         <input
@@ -187,6 +217,7 @@ const toggleAudioMode = () => {
         :disabled="!store.isRunning"
         :label="store.isFullscreen ? 'EXIT FULL' : 'FULLSCREEN'"
         :variant="store.isFullscreen ? 'primary' : 'secondary'"
+        :icon="store.isFullscreen ? Minimize : Maximize"
         @click="emit('fullscreen')"
       />
     </div>

@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, type Component } from 'vue'
 
 const props = defineProps<{
   modelValue: string
   label: string
   options: { value: string; label: string }[]
   variant: 'amber' | 'cyan' | 'purple'
+  icon?: Component
 }>()
 
 const emit = defineEmits<{
@@ -47,9 +48,10 @@ const variantClasses = {
         :class="[variantClasses[variant].bg, variantClasses[variant].shadow]"
       />
       <span
-        class="text-xs uppercase tracking-wider font-typewriter"
+        class="text-xs uppercase tracking-wider font-typewriter flex items-center gap-1.5"
         :class="variantClasses[variant].text"
       >
+        <component :is="icon" v-if="icon" class="w-3.5 h-3.5" />
         {{ label }}
       </span>
     </span>

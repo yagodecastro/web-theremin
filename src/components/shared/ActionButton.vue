@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { type Component } from 'vue'
+
 defineProps<{
   label: string
   variant: 'primary' | 'secondary' | 'danger' | 'warning'
   disabled?: boolean
+  icon?: Component
 }>()
 
 const emit = defineEmits<{
@@ -33,6 +36,7 @@ const ledClasses = {
   >
     <span class="flex items-center justify-center gap-2 text-xs truncate">
       <span class="w-2 h-2 rounded-full" :class="ledClasses[variant]" />
+      <component :is="icon" v-if="icon" class="w-4 h-4" />
       {{ label }}
     </span>
   </button>
