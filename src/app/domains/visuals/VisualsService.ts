@@ -120,21 +120,41 @@ export class VisualsService implements IVisualsService {
     createPinchBurstEffect(canvasOptions, this)
   }
 
-  /** @description Cria e armazena em cache uma textura de círculo para reutilização. */
-  public createCircleTexture(color: Color, radius: number, handedness?: HandednessType): Texture {
-    const cacheKey = `${handedness}_${color.toHex()}_${radius}`
+  /** @description Cria e armazena em cache uma textura de forma para reutilização. */
+  public createShapeTexture(
+    color: Color,
+    size: number,
+    shape: 'circle' | 'square' | 'triangle' = 'circle',
+    handedness?: HandednessType
+  ): Texture {
+    const cacheKey = `${handedness}_${color.toHex()}_${size}_${shape}`
     this.textureUsage.set(cacheKey, Date.now())
     if (this.textureCache.has(cacheKey)) {
       return this.textureCache.get(cacheKey)!
     }
     this.evictCacheIfNeeded()
     const graphics = new Graphics()
-    graphics.circle(0, 0, radius)
+    
+    if (shape === 'square') {
+      graphics.rect(-size / 2, -size / 2, size, size)
+    } else if (shape === 'triangle') {
+      const half = size / 2
+      // Desenha um triângulo equilátero apontando para cima
+      graphics.poly([-half, half, 0, -half, half, half])
+    } else {
+      graphics.circle(0, 0, size)
+    }
+    
     graphics.fill({ color, alpha: 1 })
     const texture = this.app!.renderer.generateTexture(graphics)
     graphics.destroy()
     this.textureCache.set(cacheKey, texture)
     return texture
+  }
+
+  /** @deprecated Use createShapeTexture instead */
+  public createCircleTexture(color: Color, radius: number, handedness?: HandednessType): Texture {
+    return this.createShapeTexture(color, radius, 'circle', handedness)
   }
 
   /** @description Adquire uma partícula do pool para uso. */

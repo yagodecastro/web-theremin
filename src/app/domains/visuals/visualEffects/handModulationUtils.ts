@@ -43,13 +43,16 @@ export function createHandModulationEffect(
   const config = visualsService.visualEffectsConfig.handModulation
   const mode = visualsService.getPoeticMode()
 
-  if (mode === 'constellation') return // Em constellation não usamos partículas de mão padrão
-
   const maxParticles = visualsService.getMaxParticlesPerEffect()
 
-  // Em sinestesia, emitimos mais partículas
-  const multiplier =
-    mode === 'synesthesia' ? config.particleCountMultiplier * 1.5 : config.particleCountMultiplier
+  // Em sinestesia, emitimos mais partículas. Em constelação, emitimos menos para não poluir as linhas.
+  let multiplier = config.particleCountMultiplier
+  if (mode === 'synesthesia') {
+    multiplier *= 1.5
+  } else if (mode === 'constellation') {
+    multiplier *= 0.4
+  }
+  
   const baseParticleCount = Math.floor(options.intensity * multiplier)
 
   const particleCount = Math.min(
@@ -87,34 +90,42 @@ function activateHandModulationParticle(
     mode
   )
 
-  const spawnRadius =
-    mode === 'synesthesia'
-      ? config.handModulation.baseSpawnRadius * 0.5
-      : config.handModulation.baseSpawnRadius * options.intensity
+  let spawnRadius = config.handModulation.baseSpawnRadius * options.intensity
+  let particleSize = config.handModulation.particleSize
+  let speedMult = 1
+  let decay = config.handModulation.decay
+  let shape: 'circle' | 'square' | 'triangle' = 'circle'
+
+  if (mode === 'synesthesia') {
+    spawnRadius = config.handModulation.baseSpawnRadius * 0.5
+    particleSize = config.handModulation.particleSize * 2.5 // Partículas maiores em sinestesia
+    speedMult = 0.2 // Movimento super lento e flutuante
+    decay = config.handModulation.decay * 0.2 // Duram muito tempo para pintar a tela
+    shape = 'circle'
+  } else if (mode === 'constellation') {
+    spawnRadius = 0 // Spawnam exatamente nas articulações
+    particleSize = config.handModulation.particleSize * 1.5
+    speedMult = 0.5
+    decay = config.handModulation.decay * 1.5 // Desaparecem rápido
+    shape = Math.random() > 0.5 ? 'square' : 'triangle' // Formas geométricas para constelação!
+  }
 
   const angle = Math.random() * Math.PI * 2
   const radius = Math.random() * spawnRadius
   const spawnX = options.x + Math.cos(angle) * radius
   const spawnY = options.y + Math.sin(angle) * radius
 
-  const particleSize =
-    mode === 'synesthesia'
-      ? config.handModulation.particleSize * 2 // Partículas maiores em sinestesia
-      : config.handModulation.particleSize
+  const texture = visualsService.createShapeTexture(color, particleSize, shape, options.handedness)
 
-  const texture = visualsService.createCircleTexture(color, particleSize, options.handedness)
-
-  // Em sinestesia a velocidade inicial é muito menor (flutuação)
-  const speedMult = mode === 'synesthesia' ? 0.2 : 1
+  // Em constelação as partículas flutuam para cima levemente
   const vx = (Math.random() - 0.5) * config.handModulation.speed * speedMult
-  const vy = (Math.random() - 0.5) * config.handModulation.speed * speedMult
+  let vy = (Math.random() - 0.5) * config.handModulation.speed * speedMult
+  if (mode === 'constellation') {
+    vy -= 1 // Drift ascendente
+  }
 
   const scale =
     config.handModulation.scale.base + Math.random() * config.handModulation.scale.random
-
-  // Decay menor em sinestesia para criar rastro
-  const decay =
-    mode === 'synesthesia' ? config.handModulation.decay * 0.2 : config.handModulation.decay
 
   particle.activate({
     x: spawnX,
