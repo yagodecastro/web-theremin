@@ -15,6 +15,7 @@ import { EffectQueue } from '@/app/shared/EffectQueue.ts'
 export class HandModulationHandler extends BaseGestureHandler {
   readonly priority: HandlerPriority = 'medium'
   private lastValues: Map<string, { x: number; y: number; openness: number }> = new Map()
+  private lastSmoothedValues: Map<string, { x: number; y: number; openness: number }> = new Map()
   // Guarda o timestamp do último processamento MIDI por mão (em DOMHighResTimeStamp)
   private lastProcessTimestamp: Map<string, number> = new Map()
   private readonly throttleInterval: number = 16 // ms, aprox 60fps
@@ -55,24 +56,49 @@ export class HandModulationHandler extends BaseGestureHandler {
         return // Pula o processamento MIDI se estiver dentro do intervalo de throttle.
       }
 
-      if (this.hasSignificantChange(landmarks, handName)) {
-        this.processMidi(landmarks, handName, openness)
+      // Aplica o filtro de média móvel exponencial (EMA) para suavizar tremidos da mão e ruídos da câmera
+      const rawPosition = getPalmCenter(landmarks)
+      const rawOpenness = openness ?? 0
+      const lastSmoothed = this.lastSmoothedValues.get(handName) || {
+        x: rawPosition.x,
+        y: rawPosition.y,
+        openness: rawOpenness
+      }
+
+      const alpha = 0.25 // Fator de suavização (menor = mais suave, maior = mais reativo)
+      const smoothedX = lastSmoothed.x + alpha * (rawPosition.x - lastSmoothed.x)
+      const smoothedY = lastSmoothed.y + alpha * (rawPosition.y - lastSmoothed.y)
+      const smoothedOpenness = openness !== null
+        ? lastSmoothed.openness + alpha * (rawOpenness - lastSmoothed.openness)
+        : lastSmoothed.openness
+
+      this.lastSmoothedValues.set(handName, {
+        x: smoothedX,
+        y: smoothedY,
+        openness: smoothedOpenness
+      })
+
+      if (this.hasSignificantChange(smoothedX, smoothedY, smoothedOpenness, handName)) {
+        this.processMidi(smoothedX, smoothedY, openness !== null ? smoothedOpenness : null, handName)
         this.lastProcessTimestamp.set(handName, timestamp)
       }
     })
   }
 
   /** @description Verifica se houve uma mudança significativa na posição ou abertura da mão. */
-  private hasSignificantChange(landmarks: NormalizedLandmark[], handName: string): boolean {
-    const wrist = landmarks[0]
-    const openness = getThreeFingersOpenness(landmarks) ?? 0
+  private hasSignificantChange(
+    smoothedX: number,
+    smoothedY: number,
+    smoothedOpenness: number,
+    handName: string
+  ): boolean {
     const last = this.lastValues.get(handName) ?? { x: 0, y: 0, openness: 0 }
-    const xChanged = Math.abs(wrist.x - last.x) > this.gestureConfig.significantMovementChange
-    const yChanged = Math.abs(wrist.y - last.y) > this.gestureConfig.significantMovementChange
+    const xChanged = Math.abs(smoothedX - last.x) > this.gestureConfig.significantMovementChange
+    const yChanged = Math.abs(smoothedY - last.y) > this.gestureConfig.significantMovementChange
     const opennessChanged =
-      Math.abs(openness - last.openness) > this.gestureConfig.significantMovementChange
+      Math.abs(smoothedOpenness - last.openness) > this.gestureConfig.significantMovementChange
     if (xChanged || yChanged || opennessChanged) {
-      this.lastValues.set(handName, { x: wrist.x, y: wrist.y, openness })
+      this.lastValues.set(handName, { x: smoothedX, y: smoothedY, openness: smoothedOpenness })
       return true
     }
     return false
@@ -80,23 +106,23 @@ export class HandModulationHandler extends BaseGestureHandler {
 
   /** @description Processa e envia os comandos MIDI correspondentes à modulação da mão. */
   private processMidi(
-    landmarks: NormalizedLandmark[],
-    handName: 'Left' | 'Right',
-    openness: number | null
+    smoothedX: number,
+    smoothedY: number,
+    smoothedOpenness: number | null,
+    handName: 'Left' | 'Right'
   ): void {
-    const position = getPalmCenter(landmarks)
     if (handName === 'Left') {
       const config = this.midiConfig.controlChanges.left
-      this.sendMidiCC(config.y, position.y)
-      if (openness !== null) {
-        this.sendMidiCC(config.handOpenness, openness)
+      this.sendMidiCC(config.y, smoothedY)
+      if (smoothedOpenness !== null) {
+        this.sendMidiCC(config.handOpenness, smoothedOpenness)
       }
     } else {
       const config = this.midiConfig.controlChanges.right
-      this.sendMidiCC(config.x, position.x)
-      this.sendMidiCC(config.y, position.y)
-      if (openness !== null) {
-        this.sendMidiCC(config.handOpenness, openness)
+      this.sendMidiCC(config.x, smoothedX)
+      this.sendMidiCC(config.y, smoothedY)
+      if (smoothedOpenness !== null) {
+        this.sendMidiCC(config.handOpenness, smoothedOpenness)
       }
     }
   }

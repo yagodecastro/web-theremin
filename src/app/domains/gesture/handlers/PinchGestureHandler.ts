@@ -18,6 +18,7 @@ export interface PinchState {
 /** @description Manipulador para o gesto de pinça, que controla a reprodução de notas. */
 export class PinchGestureHandler extends BaseGestureHandler {
   readonly priority: HandlerPriority = 'high'
+  private lastSmoothedPosition: { x: number; y: number } | null = null
 
   private pinchState: PinchState = {
     isActive: false,
@@ -47,11 +48,24 @@ export class PinchGestureHandler extends BaseGestureHandler {
     const wasActive = this.pinchState.isActive
     const isActive = pinchData?.isActive ?? false
 
-    // Always send CC100 for pinch distance if pinchData exists
     if (pinchData) {
+      let smoothedPos = pinchData.position
+      if (this.lastSmoothedPosition) {
+        const alpha = 0.35 // Baixa latência, ótima suavização
+        smoothedPos = {
+          x: this.lastSmoothedPosition.x + alpha * (pinchData.position.x - this.lastSmoothedPosition.x),
+          y: this.lastSmoothedPosition.y + alpha * (pinchData.position.y - this.lastSmoothedPosition.y)
+        }
+      }
+      this.lastSmoothedPosition = smoothedPos
+      pinchData.position = smoothedPos
+
+      // Always send CC100 for pinch distance if pinchData exists
       // pinchData.intensity goes from 0 (open) to 1 (closed)
       // Reverse it for Reverb: 0 (closed) to 1 (open)
       this.midiService.sendCC(100, (1 - pinchData.intensity) * this.midiConfig.maxValue)
+    } else {
+      this.lastSmoothedPosition = null
     }
 
     if (isActive && !wasActive) {
