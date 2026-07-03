@@ -5,7 +5,11 @@ import { createHandModulationEffect } from './visualEffects/handModulationUtils.
 import { createPinchBurstEffect } from './visualEffects/pinchBurstUtils.ts'
 import { IVisualsService } from '@/app/domains/visuals/IVisualsService.ts'
 import { SystemPerformanceConfig } from '@/app/core'
-import { PinchBurstEffectData, VisualEffect, VisualEffectsConfig } from '@/app/domains/visuals/index.ts'
+import {
+  PinchBurstEffectData,
+  VisualEffect,
+  VisualEffectsConfig
+} from '@/app/domains/visuals/index.ts'
 import { EffectQueue } from '@/app/shared/EffectQueue.ts'
 
 /** @description Gerencia a renderização de efeitos visuais com pooling de partículas e cache de texturas. */

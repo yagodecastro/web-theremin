@@ -42,7 +42,10 @@ export function generateMidiScale(
     }
     return midiNotes
   } catch (error) {
-    console.error(`Erro ao gerar escala MIDI para "${tonic}${baseOctave} ${scaleName}", usando fallback.`, error)
+    console.error(
+      `Erro ao gerar escala MIDI para "${tonic}${baseOctave} ${scaleName}", usando fallback.`,
+      error
+    )
     const fallbackScale = Scale.get(`A${baseOctave} minor pentatonic`)
     const stepsPerOctave = fallbackScale.intervals.length
     const range = Math.ceil((stepsPerOctave * octaveRange) / 2)

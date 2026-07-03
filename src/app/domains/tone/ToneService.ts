@@ -39,7 +39,14 @@ export class ToneService implements IMidiService {
     this.synth = new Tone.MonoSynth({
       oscillator: { type: 'sawtooth' },
       envelope: { attack: 0.04, decay: 0.1, sustain: 0.7, release: 0.8 },
-      filterEnvelope: { attack: 0, decay: 0, sustain: 1, release: 0.1, baseFrequency: 20000, octaves: 0 }
+      filterEnvelope: {
+        attack: 0,
+        decay: 0,
+        sustain: 1,
+        release: 0.1,
+        baseFrequency: 20000,
+        octaves: 0
+      }
     })
 
     this.synth.chain(

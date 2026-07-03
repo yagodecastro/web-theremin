@@ -17,7 +17,9 @@ export class ServiceOrchestrator {
     private visualsService: IVisualsService,
     private store: AppStore
   ) {
-    this.frameScheduler = new FrameScheduler(this.config, this.store, timestamp => this.processFrame(timestamp))
+    this.frameScheduler = new FrameScheduler(this.config, this.store, timestamp =>
+      this.processFrame(timestamp)
+    )
   }
 
   /** @description Inicia o processamento de gestos e o loop principal. */

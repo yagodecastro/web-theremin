@@ -105,7 +105,10 @@ export class AppController {
       if (this.audioMode === 'midi') {
         this.handleError(error, 'error', 'Erro ao conectar MIDI')
       } else {
-        this.store.addSystemLog('warn', 'Erro ao inicializar AudioContext — aguardando interação do usuário')
+        this.store.addSystemLog(
+          'warn',
+          'Erro ao inicializar AudioContext — aguardando interação do usuário'
+        )
       }
     }
   }

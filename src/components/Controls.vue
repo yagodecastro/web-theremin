@@ -18,10 +18,30 @@ import {
   TriangleAlert,
   Camera,
   Maximize,
-  Minimize
+  Minimize,
+  Palette,
+  Sparkles,
+  Zap
 } from 'lucide-vue-next'
 
 const store = useAppStore()
+
+const poeticModeOptions = [
+  { value: 'classic', label: 'CLASSIC (UI)' },
+  { value: 'synesthesia', label: 'SYNESTHESIA' },
+  { value: 'constellation', label: 'CONSTELLATION' }
+]
+
+const poeticModeIcon = computed(() => {
+  switch (store.poeticMode) {
+    case 'synesthesia':
+      return Palette
+    case 'constellation':
+      return Sparkles
+    default:
+      return Zap
+  }
+})
 
 const midiOutputOptions = computed(() =>
   store.devices.midi.availableMidiOutputs.map(output => ({ value: output, label: output }))
@@ -105,8 +125,18 @@ const toggleAudioMode = () => {
         @update:model-value="v => store.setOctaveRange(Number(v))"
       />
     </div>
-    <!-- Linha 2: dispositivos -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <!-- Linha 2: dispositivos & poética -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <LabeledSelect
+        :model-value="store.poeticMode"
+        :options="poeticModeOptions"
+        label="VISUAL MODE"
+        variant="cyan"
+        :icon="poeticModeIcon"
+        @update:model-value="
+          v => store.setPoeticMode(v as 'classic' | 'synesthesia' | 'constellation')
+        "
+      />
       <ActionButton
         :label="store.audioMode === 'tone' ? 'TONE.JS' : 'MIDI'"
         :variant="store.audioMode === 'tone' ? 'primary' : 'warning'"
