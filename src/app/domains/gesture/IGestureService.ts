@@ -4,7 +4,7 @@ import { IMidiService } from '@/app/domains/midi/IMidiService'
 /** @description Interface para o serviço de gestos unificado. */
 export interface IGestureService {
   /** @description Inicializa o serviço de gestos. */
-  initialize(videoElement: HTMLVideoElement): Promise<void>
+  initialize(videoElement: HTMLVideoElement, deviceId?: string): Promise<void>
   /** @description Detecta mãos no frame de vídeo atual. */
   detectHands(): Promise<HandLandmarkerResult | null>
   /** @description Processa os gestos detectados em um frame com o timestamp do rAF. */

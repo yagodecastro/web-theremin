@@ -31,6 +31,8 @@ export class VisualsService implements IVisualsService {
   private interactionIntensity: number = 0 // Mede a atividade das mãos para modular a câmera
   private currentLeftEye: { x: number; y: number } | null = null
   private currentRightEye: { x: number; y: number } | null = null
+  private targetLeftEye: { x: number; y: number } | null = null
+  private targetRightEye: { x: number; y: number } | null = null
   private eyeDetectionTimeout: number = 0
 
   constructor(
@@ -226,7 +228,33 @@ export class VisualsService implements IVisualsService {
     // Decai o timeout de detecção dos olhos para limpá-los se a pessoa sair da câmera
     this.eyeDetectionTimeout++
     if (this.eyeDetectionTimeout > 15) {
+      this.targetLeftEye = null
+      this.targetRightEye = null
       this.currentLeftEye = null
+      this.currentRightEye = null
+    }
+
+    // Smooth interpolation (LERP) to reduce jitter in eye tracking
+    const LERP_FACTOR = 0.15
+    if (this.targetLeftEye) {
+      if (!this.currentLeftEye) {
+        this.currentLeftEye = { ...this.targetLeftEye }
+      } else {
+        this.currentLeftEye.x += (this.targetLeftEye.x - this.currentLeftEye.x) * LERP_FACTOR
+        this.currentLeftEye.y += (this.targetLeftEye.y - this.currentLeftEye.y) * LERP_FACTOR
+      }
+    } else {
+      this.currentLeftEye = null
+    }
+
+    if (this.targetRightEye) {
+      if (!this.currentRightEye) {
+        this.currentRightEye = { ...this.targetRightEye }
+      } else {
+        this.currentRightEye.x += (this.targetRightEye.x - this.currentRightEye.x) * LERP_FACTOR
+        this.currentRightEye.y += (this.targetRightEye.y - this.currentRightEye.y) * LERP_FACTOR
+      }
+    } else {
       this.currentRightEye = null
     }
     
@@ -309,8 +337,8 @@ export class VisualsService implements IVisualsService {
     if (effect.type === 'eyeTrack') {
       const eyeEffect = effect as import('@/app/domains/visuals/index.ts').EyeEffectData
       if (eyeEffect.leftEye || eyeEffect.rightEye) {
-        this.currentLeftEye = eyeEffect.leftEye
-        this.currentRightEye = eyeEffect.rightEye
+        this.targetLeftEye = eyeEffect.leftEye
+        this.targetRightEye = eyeEffect.rightEye
         this.eyeDetectionTimeout = 0
       }
       return

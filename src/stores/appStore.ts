@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { AVAILABLE_SCALES, CHROMATIC_NOTES } from '@/app/shared/utils/musicTheoryUtils'
 import type { AppController } from '@/app/core'
 import { LogType } from 'vite'
@@ -24,32 +24,61 @@ export type AppStatus =
 
 /** @description Store Pinia para o estado global da aplicação. */
 export const useAppStore = defineStore('appStore', () => {
+  interface PersistentSettings {
+    audioMode?: 'tone' | 'midi'
+    poeticMode?: 'classic' | 'synesthesia' | 'constellation'
+    showCamera?: boolean
+    cameraOpacity?: number
+    musicalConfig?: {
+      tonic?: string
+      scaleName?: string
+      baseOctave?: number
+      octaveRange?: number
+    }
+    selectedMidiOutput?: string
+    selectedCamera?: string
+  }
+
+  // Load saved settings from LocalStorage
+  const STORAGE_KEY = 'web-theremin:settings'
+  let savedSettings: PersistentSettings = {}
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw) {
+        savedSettings = JSON.parse(raw) as PersistentSettings
+      }
+    } catch (e) {
+      console.error('Failed to load settings from localStorage:', e)
+    }
+  }
+
   const appSystem = ref<AppController | null>(null)
   const status = ref<AppStatus>('idle')
   const error = ref<string | null>(null)
-  const audioMode = ref<'tone' | 'midi'>('tone')
-  const poeticMode = ref<'classic' | 'synesthesia' | 'constellation'>('classic')
+  const audioMode = ref<'tone' | 'midi'>(savedSettings.audioMode || 'tone')
+  const poeticMode = ref<'classic' | 'synesthesia' | 'constellation'>(savedSettings.poeticMode || 'classic')
   const gestureActive = ref(false)
   const lastGesturePosition = ref<{ x: number; y: number } | null>(null)
-  const showCamera = ref(false)
-  const cameraOpacity = ref(0.6)
+  const showCamera = ref<boolean>(savedSettings.showCamera !== undefined ? savedSettings.showCamera : false)
+  const cameraOpacity = ref<number>(savedSettings.cameraOpacity !== undefined ? savedSettings.cameraOpacity : 0.6)
   const isFullscreen = ref(false)
   const debugInfoValue = reactive<Array<{ key: string; value: string | undefined }>>([])
   const devices = ref({
     midi: {
-      selectedMidiOutput: '',
+      selectedMidiOutput: savedSettings.selectedMidiOutput || '',
       availableMidiOutputs: [] as string[]
     },
     webcam: {
-      selectedCamera: '',
+      selectedCamera: savedSettings.selectedCamera || '',
       availableCameras: [] as Array<{ deviceId: string; label: string }>
     }
   })
   const musicalConfig = ref({
-    tonic: 'A',
-    scaleName: 'minor pentatonic',
-    baseOctave: 3,
-    octaveRange: 3,
+    tonic: savedSettings.musicalConfig?.tonic || 'A',
+    scaleName: savedSettings.musicalConfig?.scaleName || 'minor pentatonic',
+    baseOctave: savedSettings.musicalConfig?.baseOctave !== undefined ? savedSettings.musicalConfig.baseOctave : 3,
+    octaveRange: savedSettings.musicalConfig?.octaveRange !== undefined ? savedSettings.musicalConfig.octaveRange : 3,
     availableScales: AVAILABLE_SCALES,
     availableTonics: CHROMATIC_NOTES
   })
@@ -134,15 +163,25 @@ export const useAppStore = defineStore('appStore', () => {
   /** @description Define a lista de saídas MIDI disponíveis. */
   const setMidiOutputs = (outputs: string[]) => {
     devices.value.midi.availableMidiOutputs = outputs
-    if (outputs.length > 0 && !devices.value.midi.selectedMidiOutput) {
-      devices.value.midi.selectedMidiOutput = outputs[0]
+    const currentSelected = devices.value.midi.selectedMidiOutput
+    if (outputs.length > 0) {
+      if (!currentSelected || !outputs.includes(currentSelected)) {
+        devices.value.midi.selectedMidiOutput = outputs[0]
+      }
+    } else {
+      devices.value.midi.selectedMidiOutput = ''
     }
   }
   /** @description Define a lista de câmeras disponíveis. */
   const setCameras = (cameras: Array<{ deviceId: string; label: string }>) => {
     devices.value.webcam.availableCameras = cameras
-    if (cameras.length > 0 && !devices.value.webcam.selectedCamera) {
-      devices.value.webcam.selectedCamera = cameras[0].deviceId
+    const currentSelected = devices.value.webcam.selectedCamera
+    if (cameras.length > 0) {
+      if (!currentSelected || !cameras.some(cam => cam.deviceId === currentSelected)) {
+        devices.value.webcam.selectedCamera = cameras[0].deviceId
+      }
+    } else {
+      devices.value.webcam.selectedCamera = ''
     }
   }
   /** @description Adiciona uma entrada de log ao sistema. */
@@ -217,6 +256,34 @@ export const useAppStore = defineStore('appStore', () => {
       debugInfoValue.push({ key, value })
     }
   }
+
+  // Salva automaticamente as configurações no LocalStorage quando alteradas
+  watch(
+    () => ({
+      audioMode: audioMode.value,
+      poeticMode: poeticMode.value,
+      showCamera: showCamera.value,
+      cameraOpacity: cameraOpacity.value,
+      musicalConfig: {
+        tonic: musicalConfig.value.tonic,
+        scaleName: musicalConfig.value.scaleName,
+        baseOctave: musicalConfig.value.baseOctave,
+        octaveRange: musicalConfig.value.octaveRange
+      },
+      selectedMidiOutput: devices.value.midi.selectedMidiOutput,
+      selectedCamera: devices.value.webcam.selectedCamera
+    }),
+    (newSettings) => {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings))
+        } catch (e) {
+          console.error('Failed to save settings to localStorage:', e)
+        }
+      }
+    },
+    { deep: true }
+  )
 
   return {
     appSystem,

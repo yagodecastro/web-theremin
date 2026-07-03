@@ -40,10 +40,23 @@ export class AppController {
   ): Promise<{ midiOutputs: string[]; cameras: Array<{ deviceId: string; label: string }> }> {
     this.store.setStatus('initializing')
     try {
-      await this.gestureService.initialize(videoElement)
+      const savedCamera = this.store.devices.webcam.selectedCamera
+      await this.gestureService.initialize(videoElement, savedCamera || undefined)
       await this.visualsService.initialize(visualsCanvas, videoElement)
       const devices = await this.detectAvailableDevices()
-      await this.connectMidi()
+      
+      const savedMidi = this.store.devices.midi.selectedMidiOutput
+      const targetMidi = devices.midiOutputs.includes(savedMidi)
+        ? savedMidi
+        : devices.midiOutputs[0]
+      await this.connectMidi(targetMidi)
+
+      // Sync saved musical settings to the active midiService
+      this.midiService.setTonic(this.store.musicalConfig.tonic)
+      this.midiService.setScale(this.store.musicalConfig.scaleName)
+      this.midiService.setBaseOctave(this.store.musicalConfig.baseOctave)
+      this.midiService.setOctaveRange(this.store.musicalConfig.octaveRange)
+
       this.store.setStatus('ready')
       return devices
     } catch (error) {
@@ -61,13 +74,28 @@ export class AppController {
     this.audioMode = mode
     this.store.setAudioMode(mode)
     this.midiService = this.setupMidiService()
+
+    // Sync musical settings to the newly created midiService
+    this.midiService.setTonic(this.store.musicalConfig.tonic)
+    this.midiService.setScale(this.store.musicalConfig.scaleName)
+    this.midiService.setBaseOctave(this.store.musicalConfig.baseOctave)
+    this.midiService.setOctaveRange(this.store.musicalConfig.octaveRange)
+
     this.gestureService.updateMidiService(this.midiService)
     this.serviceOrchestrator = this.setupServiceOrchestrator()
+    
     if (mode === 'midi') {
       const devices = await this.detectAvailableDevices()
       this.store.setMidiOutputs(devices.midiOutputs)
+      const savedMidi = this.store.devices.midi.selectedMidiOutput
+      const targetMidi = devices.midiOutputs.includes(savedMidi)
+        ? savedMidi
+        : devices.midiOutputs[0]
+      await this.connectMidi(targetMidi)
+    } else {
+      await this.connectMidi()
     }
-    await this.connectMidi()
+
     if (wasRunning) this.serviceOrchestrator.start()
   }
 

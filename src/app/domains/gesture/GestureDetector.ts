@@ -75,7 +75,20 @@ export class GestureDetector implements IGestureDetector {
       videoConstraints.facingMode = this.webcamConfig.facingMode
     }
     const constraints: MediaStreamConstraints = { video: videoConstraints, audio: false }
-    this.stream = await navigator.mediaDevices.getUserMedia(constraints)
+    
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia(constraints)
+    } catch (error) {
+      if (deviceId) {
+        console.warn(`Saved camera ${deviceId} failed, falling back to default camera:`, error)
+        delete videoConstraints.deviceId
+        videoConstraints.facingMode = this.webcamConfig.facingMode
+        this.stream = await navigator.mediaDevices.getUserMedia(constraints)
+      } else {
+        throw error
+      }
+    }
+
     this.videoElement!.srcObject = this.stream
     this.setupStreamMonitoring()
     await new Promise<void>((resolve, reject) => {

@@ -24,8 +24,8 @@ export class GestureService implements IGestureService {
   }
 
   /** @description Inicializa o serviço de gestos. */
-  async initialize(videoElement: HTMLVideoElement): Promise<void> {
-    await this.detector.initialize(videoElement)
+  async initialize(videoElement: HTMLVideoElement, deviceId?: string): Promise<void> {
+    await this.detector.initialize(videoElement, deviceId)
   }
 
   /** @description Detecta mãos no frame de vídeo atual. */
