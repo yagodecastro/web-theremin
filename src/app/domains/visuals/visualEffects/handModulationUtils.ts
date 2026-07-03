@@ -9,8 +9,20 @@ import { VisualEffectsConfig } from '@/app/domains/visuals'
 function calculateAdvancedColor(
   intensity: number,
   visualEffectsConfig: VisualEffectsConfig,
-  handedness: HandednessType | undefined
+  handedness: HandednessType | undefined,
+  xPosition: number = 0,
+  poeticMode: 'classic' | 'synesthesia' | 'constellation' = 'classic'
 ): Color {
+  if (poeticMode === 'synesthesia') {
+    // Cor baseada na posição X (frequência)
+    // Converte X (0 a 1) para Hue (0 a 360) e gera HSL
+    const hue = (1 - xPosition) * 360 // Invertido porque X=0 é direita na tela espelhada, mas notas agudas? Depende do mapeamento.
+    
+    // HSL to RGB conversion (basic version for Pixi Color)
+    // Pixi Color aceita hsl string
+    return new Color(`hsl(${hue}, 100%, 50%)`)
+  }
+
   const handColorsConfig = visualEffectsConfig.handModulation
   const handColors = handedness === 'Left' ? handColorsConfig.left : handColorsConfig.right
   const baseColor = new Color(handColors.base)
@@ -29,8 +41,16 @@ export function createHandModulationEffect(
   visualsService: VisualsService
 ): void {
   const config = visualsService.visualEffectsConfig.handModulation
+  const mode = visualsService.getPoeticMode()
+  
+  if (mode === 'constellation') return // Em constellation não usamos partículas de mão padrão
+
   const maxParticles = visualsService.getMaxParticlesPerEffect()
-  const baseParticleCount = Math.floor(options.intensity * config.particleCountMultiplier)
+  
+  // Em sinestesia, emitimos mais partículas
+  const multiplier = mode === 'synesthesia' ? config.particleCountMultiplier * 1.5 : config.particleCountMultiplier
+  const baseParticleCount = Math.floor(options.intensity * multiplier)
+  
   const particleCount = Math.min(
     options.intensity > 0 ? Math.max(baseParticleCount, config.minParticles) : 0,
     maxParticles
@@ -43,7 +63,7 @@ export function createHandModulationEffect(
     if (!particle) {
       break
     }
-    activateHandModulationParticle(particle, options, visualsService)
+    activateHandModulationParticle(particle, options, visualsService, mode)
   }
 }
 
@@ -51,31 +71,54 @@ export function createHandModulationEffect(
 function activateHandModulationParticle(
   particle: PooledParticle,
   options: EffectOptions,
-  visualsService: VisualsService
+  visualsService: VisualsService,
+  mode: 'classic' | 'synesthesia' | 'constellation'
 ): void {
   const config = visualsService.visualEffectsConfig
-  const color = calculateAdvancedColor(options.intensity, config, options.handedness)
-  const spawnRadius = config.handModulation.baseSpawnRadius * options.intensity
+  
+  // Pass normalizado x para color calculation (options.x / width)
+  const normalizedX = options.x / visualsService.canvasConfig.width
+  const color = calculateAdvancedColor(options.intensity, config, options.handedness, normalizedX, mode)
+  
+  const spawnRadius = mode === 'synesthesia' 
+    ? config.handModulation.baseSpawnRadius * 0.5 
+    : config.handModulation.baseSpawnRadius * options.intensity
+    
   const angle = Math.random() * Math.PI * 2
   const radius = Math.random() * spawnRadius
   const spawnX = options.x + Math.cos(angle) * radius
   const spawnY = options.y + Math.sin(angle) * radius
+  
+  const particleSize = mode === 'synesthesia' 
+    ? config.handModulation.particleSize * 2 // Partículas maiores em sinestesia
+    : config.handModulation.particleSize
+    
   const texture = visualsService.createCircleTexture(
     color,
-    config.handModulation.particleSize,
+    particleSize,
     options.handedness
   )
-  const vx = (Math.random() - 0.5) * config.handModulation.speed
-  const vy = (Math.random() - 0.5) * config.handModulation.speed
+  
+  // Em sinestesia a velocidade inicial é muito menor (flutuação)
+  const speedMult = mode === 'synesthesia' ? 0.2 : 1
+  const vx = (Math.random() - 0.5) * config.handModulation.speed * speedMult
+  const vy = (Math.random() - 0.5) * config.handModulation.speed * speedMult
+  
   const scale =
     config.handModulation.scale.base + Math.random() * config.handModulation.scale.random
+    
+  // Decay menor em sinestesia para criar rastro
+  const decay = mode === 'synesthesia' 
+    ? config.handModulation.decay * 0.2 
+    : config.handModulation.decay
+    
   particle.activate({
     x: spawnX,
     y: spawnY,
     vx,
     vy,
     life: config.handModulation.lifetime,
-    decay: config.handModulation.decay,
+    decay: decay,
     texture,
     scale
   })

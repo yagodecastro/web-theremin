@@ -27,8 +27,16 @@ export class ToneService implements IMidiService {
   private limiter: Tone.Limiter
   private midiScale: (number | null)[] = []
   private isConnected = false
+  
+  // Rastreamento de velocidade
+  private lastX = 0
+  private lastY = 0
+  private lastTime = 0
 
-  constructor(private config: MidiConfig) {
+  constructor(
+    private config: MidiConfig,
+    private readonly getPoeticMode: () => 'classic' | 'synesthesia' | 'constellation' = () => 'classic'
+  ) {
     this.distortion = new Tone.Distortion(0)
     this.vibrato = new Tone.Vibrato({ frequency: 5, depth: 0 })
     this.filter = new Tone.Filter({ frequency: 4000, type: 'lowpass', Q: 1 })
@@ -81,7 +89,32 @@ export class ToneService implements IMidiService {
     const { note } = this.gestureToNote(gestureX, gestureY)
     if (note === null) return
     const noteName = TonalNote.fromMidi(note)
-    const velocity = ((1 - gestureY) * 0.73 + 0.27) * intensity
+    
+    let velocity = ((1 - gestureY) * 0.73 + 0.27) * intensity
+    const mode = this.getPoeticMode()
+    
+    if (mode === 'synesthesia') {
+      // Em sinestesia a dinâmica é mais controlada pela velocidade do movimento
+      const now = performance.now()
+      if (this.lastTime > 0) {
+        const dt = now - this.lastTime
+        const dx = gestureX - this.lastX
+        const dy = gestureY - this.lastY
+        const speed = Math.sqrt(dx*dx + dy*dy) / dt
+        // Mapear velocidade para brilho/filtro extra (opcionalmente velocity também)
+        const cutoff = Math.min(10000, 200 + speed * 200000)
+        this.filter.frequency.rampTo(cutoff, 0.1)
+      }
+      this.lastX = gestureX
+      this.lastY = gestureY
+      this.lastTime = now
+    } else if (mode === 'constellation') {
+      // Em constelação, a escala é mantida, mas a nota é mais suave
+      velocity = velocity * 0.6
+      this.delay.wet.rampTo(0.6, 0.1)
+      this.reverb.wet.rampTo(0.7, 0.1)
+    }
+
     try {
       this.synth.triggerAttack(noteName, Tone.now(), velocity)
     } catch {
@@ -108,14 +141,19 @@ export class ToneService implements IMidiService {
   sendCC(controller: number, value: number): void {
     if (!this.isConnected) return
     const n = Math.max(0, Math.min(127, value)) / 127
+    const mode = this.getPoeticMode()
+    
     switch (controller) {
       // left.y → filter cutoff: exponential curve 80 Hz – 10 kHz (inverted: hand up = more cutoff)
       case 71:
-        this.filter.frequency.rampTo(80 * Math.pow(10000 / 80, 1 - n), 0.03)
+        if (mode !== 'synesthesia') {
+          this.filter.frequency.rampTo(80 * Math.pow(10000 / 80, 1 - n), 0.03)
+        }
         break
       // left.openness → filter resonance Q: 0.5 – 20
       case 1:
-        this.filter.Q.rampTo(0.5 + n * 19.5, 0.05)
+        const maxQ = mode === 'synesthesia' ? 5 : 20 // Menos Q agressivo na sinestesia
+        this.filter.Q.rampTo(0.5 + n * (maxQ - 0.5), 0.05)
         break
       // right.openness → vibrato depth: 0 – 1
       case 11:
@@ -123,15 +161,20 @@ export class ToneService implements IMidiService {
         break
       // right.y → distortion drive: 0 – 0.95 (inverted: hand up = more drive)
       case 20:
-        this.distortion.distortion = (1 - n) * 0.95
+        const maxDrive = mode === 'classic' ? 0.95 : 0.4
+        this.distortion.distortion = (1 - n) * maxDrive
         break
       // right.x → delay wet: 0 – 0.7
       case 21:
-        this.delay.wet.rampTo(n * 0.7, 0.05)
+        if (mode !== 'constellation') {
+          this.delay.wet.rampTo(n * 0.7, 0.05)
+        }
         break
       // pinch → reverb wet: 0 – 0.8
       case 100:
-        this.reverb.wet.rampTo(n * 0.8, 0.1)
+        if (mode !== 'constellation') {
+          this.reverb.wet.rampTo(n * 0.8, 0.1)
+        }
         break
     }
   }

@@ -20,6 +20,8 @@ export class VisualsService implements IVisualsService {
   private activeParticles: PooledParticle[] = []
   private textureCache: Map<string, Texture> = new Map()
   private textureUsage: Map<string, number> = new Map()
+  private fadeOverlay: Graphics | null = null
+  private constellationGraphics: Graphics | null = null
 
   constructor(
     public readonly canvasConfig: CanvasConfig,
@@ -27,7 +29,8 @@ export class VisualsService implements IVisualsService {
     public readonly visualEffectsConfig: VisualEffectsConfig,
     // EffectQueue plain (não-reativo) substitui AppStore para comunicação de efeitos.
     // Elimina ~60 disparos do sistema de reatividade Vue/Pinia por segundo.
-    private readonly effectQueue: EffectQueue
+    private readonly effectQueue: EffectQueue,
+    public readonly getPoeticMode: () => 'classic' | 'synesthesia' | 'constellation' = () => 'classic'
   ) {}
 
   /** @description Inicializa a aplicação Pixi.js e o pool de partículas. */
@@ -44,6 +47,10 @@ export class VisualsService implements IVisualsService {
         backgroundAlpha: 0,
         clearBeforeRender: true
       })
+      
+      this.constellationGraphics = new Graphics()
+      this.app.stage.addChild(this.constellationGraphics)
+      
       this.particleContainer = new Container()
       this.app.stage.addChild(this.particleContainer)
       this.initializePool()
@@ -150,6 +157,19 @@ export class VisualsService implements IVisualsService {
    * em vez de indexOf O(n) + splice O(n).
    */
   render(): void {
+    const mode = this.getPoeticMode()
+    
+    if (this.constellationGraphics) {
+      this.constellationGraphics.clear()
+    }
+    
+    // Fading overlay para sinestesia (rastro)
+    if (mode === 'synesthesia' && this.fadeOverlay) {
+      // Como a câmera está atrás, não podemos preencher com preto sólido.
+      // Se 'clearBeforeRender' é true, o rastro não funciona assim.
+      // Modificamos as propriedades da partícula no 'handModulationUtils' para durar mais.
+    }
+
     // Drena a fila de efeitos sem criar arrays temporários
     this.effectQueue.drain(effect => this.processVisualEffect(effect))
 
@@ -177,7 +197,53 @@ export class VisualsService implements IVisualsService {
     if (type === 'pinchBurst') {
       this.emitPinchBurst(options as Omit<PinchBurstEffectData, 'type'>)
     } else if (type === 'handModulation') {
+      const mode = this.getPoeticMode()
+      const modulationOptions = effect as import('@/app/domains/visuals/index.ts').HandModulationEffectData
+      if (mode === 'constellation' && modulationOptions.landmarks && this.constellationGraphics) {
+        this.drawConstellation(modulationOptions.landmarks)
+      }
       this.emitHandModulation(options)
+    }
+  }
+
+  private drawConstellation(landmarks: import('@mediapipe/tasks-vision').NormalizedLandmark[]): void {
+    if (!this.constellationGraphics) return
+    
+    const g = this.constellationGraphics
+    const w = this.canvasConfig.width
+    const h = this.canvasConfig.height
+    
+    g.setStrokeStyle({ width: 2, color: 0x00ffff, alpha: 0.6 })
+    
+    const drawLine = (startIdx: number, endIdx: number) => {
+      const p1 = landmarks[startIdx]
+      const p2 = landmarks[endIdx]
+      if (!p1 || !p2) return
+      g.moveTo(p1.x * w, p1.y * h)
+      g.lineTo(p2.x * w, p2.y * h)
+    }
+    
+    // Draw palm base to fingers
+    for (let i = 1; i <= 17; i += 4) {
+      drawLine(0, i)
+    }
+    
+    // Draw finger segments
+    const fingers = [[1,2,3,4], [5,6,7,8], [9,10,11,12], [13,14,15,16], [17,18,19,20]]
+    for (const finger of fingers) {
+      for (let i = 0; i < finger.length - 1; i++) {
+        drawLine(finger[i], finger[i+1])
+      }
+    }
+    
+    // Draw web connecting the base of fingers
+    drawLine(5, 9)
+    drawLine(9, 13)
+    drawLine(13, 17)
+    
+    // Draw nodes
+    for (const p of landmarks) {
+      g.circle(p.x * w, p.y * h, 3).fill({ color: 0xffffff, alpha: 0.8 })
     }
   }
 

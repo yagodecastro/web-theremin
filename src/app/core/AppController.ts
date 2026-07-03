@@ -157,7 +157,7 @@ export class AppController {
   /** @description Configura e retorna o serviço de áudio conforme o modo ativo. */
   private setupMidiService = (): IMidiService => {
     if (this.audioMode === 'tone') {
-      return new ToneService(this.config.domains.midi)
+      return new ToneService(this.config.domains.midi, () => this.store.poeticMode)
     }
     return new MidiService(this.config.domains.midi)
   }
@@ -168,7 +168,8 @@ export class AppController {
       this.config.core.canvas,
       this.config.core.systemPerformance,
       this.config.domains.visuals,
-      this.effectQueue
+      this.effectQueue,
+      () => this.store.poeticMode
     )
   }
 

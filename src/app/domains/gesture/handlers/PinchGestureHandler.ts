@@ -46,6 +46,14 @@ export class PinchGestureHandler extends BaseGestureHandler {
     const pinchData = detectPinch(leftHandLandmarks, this.gestureConfig.handGesture.pinch.threshold)
     const wasActive = this.pinchState.isActive
     const isActive = pinchData?.isActive ?? false
+    
+    // Always send CC100 for pinch distance if pinchData exists
+    if (pinchData) {
+      // pinchData.intensity goes from 0 (open) to 1 (closed)
+      // Reverse it for Reverb: 0 (closed) to 1 (open)
+      this.midiService.sendCC(100, (1 - pinchData.intensity) * this.midiConfig.maxValue)
+    }
+
     if (isActive && !wasActive) {
       this.handlePinchStart(pinchData!)
     } else if (isActive && wasActive) {
