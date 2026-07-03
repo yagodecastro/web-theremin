@@ -4,7 +4,7 @@ import { useAppStore } from '@/stores/appStore'
 
 const store = useAppStore()
 const fpsInfo = computed(() => {
-  const fpsDebug = store.debugInfo.find(item => item.key === 'fps')
+  const fpsDebug = store.debugInfo.find((item: { key: string }) => item.key === 'fps')
   return fpsDebug?.value || '--'
 })
 </script>

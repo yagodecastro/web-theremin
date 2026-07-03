@@ -29,7 +29,6 @@ export const useAppStore = defineStore('appStore', () => {
   const error = ref<string | null>(null)
   const audioMode = ref<'tone' | 'midi'>('tone')
   const poeticMode = ref<'classic' | 'synesthesia' | 'constellation'>('classic')
-  const isZenMode = ref(false)
   const gestureActive = ref(false)
   const lastGesturePosition = ref<{ x: number; y: number } | null>(null)
   const showCamera = ref(false)
@@ -197,10 +196,6 @@ export const useAppStore = defineStore('appStore', () => {
     poeticMode.value = mode
   }
 
-  const setZenMode = (value: boolean) => {
-    isZenMode.value = value
-  }
-
   /** @description Alterna a visibilidade da câmera. */
   const toggleCamera = () => {
     showCamera.value = !showCamera.value
@@ -229,7 +224,6 @@ export const useAppStore = defineStore('appStore', () => {
     error,
     audioMode,
     poeticMode,
-    isZenMode,
     gestureActive,
     lastGesturePosition,
     showCamera,
@@ -263,8 +257,7 @@ export const useAppStore = defineStore('appStore', () => {
     setFullscreen,
     addDebugInfo,
     setAudioMode,
-    setPoeticMode,
-    setZenMode
+    setPoeticMode
   }
 })
 

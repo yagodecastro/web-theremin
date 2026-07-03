@@ -28,6 +28,7 @@ export class VisualsService implements IVisualsService {
   private hslFilter: HslAdjustmentFilter | null = null
   private rgbSplitFilter: RGBSplitFilter | null = null
   private time: number = 0
+  private interactionIntensity: number = 0 // Mede a atividade das mãos para modular a câmera
 
   constructor(
     public readonly canvasConfig: CanvasConfig,
@@ -85,6 +86,7 @@ export class VisualsService implements IVisualsService {
       }
 
       this.constellationGraphics = new Graphics()
+      this.constellationGraphics.blendMode = 'add'
       this.app.stage.addChild(this.constellationGraphics)
 
       this.particleContainer = new Container()
@@ -194,15 +196,23 @@ export class VisualsService implements IVisualsService {
    */
   render(): void {
     const mode = this.getPoeticMode()
-
+    
+    // Decai a intensidade suavemente se as mãos estiverem paradas
+    this.interactionIntensity = Math.max(0, this.interactionIntensity - 0.02)
+    
     // Atualiza o sprite de vídeo
     if (this.videoSprite) {
       if (this.getShowCamera()) {
         this.videoSprite.visible = true
         this.videoSprite.alpha = this.getCameraOpacity()
-
+        
         if (mode === 'constellation' && this.asciiFilter) {
           this.videoSprite.filters = [this.asciiFilter]
+          // O tamanho do ASCII reage ao movimento das mãos
+          // Menos movimento = maior (abstrato), mais movimento = menor (detalhado)
+          const targetSize = 12 + (1 - this.interactionIntensity) * 16
+          this.asciiFilter.size += (targetSize - this.asciiFilter.size) * 0.1
+          
         } else if (mode === 'synesthesia' && this.hslFilter && this.rgbSplitFilter) {
           this.videoSprite.filters = [this.hslFilter, this.rgbSplitFilter]
           
@@ -213,7 +223,10 @@ export class VisualsService implements IVisualsService {
           this.hslFilter.hue = (Math.sin(this.time) * 180)
           
           // Efeito "Respiração / LSD": Separação de canais RGB pulsante
-          const splitBase = Math.sin(this.time * 2) * 15
+          // A intensidade da separação reage MUITO ao movimento das mãos!
+          const activeSplit = 2 + (this.interactionIntensity * 30) // De 2px até 32px de separação
+          const splitBase = Math.sin(this.time * 2) * activeSplit
+          
           this.rgbSplitFilter.red = { x: -splitBase, y: splitBase }
           this.rgbSplitFilter.green = { x: splitBase, y: -splitBase }
           this.rgbSplitFilter.blue = { x: splitBase, y: splitBase }
@@ -260,6 +273,9 @@ export class VisualsService implements IVisualsService {
 
   /** @description Processa um único efeito visual da fila. */
   private processVisualEffect(effect: VisualEffect): void {
+    // Aumenta a intensidade global quando há atividade (limitado a 1)
+    this.interactionIntensity = Math.min(1, this.interactionIntensity + 0.1)
+    
     const { type, ...options } = effect
     if (type === 'pinchBurst') {
       this.emitPinchBurst(options as Omit<PinchBurstEffectData, 'type'>)

@@ -15,6 +15,7 @@ export class PooledParticle extends Sprite {
   constructor(texture: Texture) {
     super(texture)
     this.anchor.set(0.5)
+    this.blendMode = 'add'
   }
 
   /** @description Ativa a partícula com novas propriedades. */

@@ -44,18 +44,18 @@ const poeticModeIcon = computed(() => {
 })
 
 const midiOutputOptions = computed(() =>
-  store.devices.midi.availableMidiOutputs.map(output => ({ value: output, label: output }))
+  store.devices.midi.availableMidiOutputs.map((output: string) => ({ value: output, label: output }))
 )
 
 const cameraOptions = computed(() =>
-  store.devices.webcam.availableCameras.map(camera => ({
+  store.devices.webcam.availableCameras.map((camera: { deviceId: string; label: string }) => ({
     value: camera.deviceId,
     label: camera.label
   }))
 )
 
 const tonicOptions = computed(() =>
-  store.musicalConfig.availableTonics.map(note => ({ value: note, label: note }))
+  store.musicalConfig.availableTonics.map((note: string) => ({ value: note, label: note }))
 )
 
 const scaleOptions = computed(() => store.musicalConfig.availableScales)
@@ -184,7 +184,7 @@ const toggleAudioMode = () => {
               const errorMessage = error instanceof Error ? error.message : String(error)
               store.addSystemLog('error', `Falha ao trocar câmera: ${errorMessage}`)
               const currentCamera = store.devices.webcam.availableCameras.find(
-                cam => cam.deviceId === store.devices.webcam.selectedCamera
+                (cam: { deviceId: string }) => cam.deviceId === store.devices.webcam.selectedCamera
               )
               if (currentCamera) {
                 store.selectCamera(currentCamera.deviceId)
