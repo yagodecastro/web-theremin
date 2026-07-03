@@ -1,4 +1,4 @@
-import { AsciiFilter } from 'pixi-filters'
+import { AsciiFilter, GlitchFilter } from 'pixi-filters'
 import { Application, Color, Container, Graphics, Texture, Sprite } from 'pixi.js'
 import { CanvasConfig, EffectOptions, PooledParticle } from './visualEffects'
 import { HandednessType } from '@/app/domains/gesture/utils/gestureUtils.ts'
@@ -25,6 +25,7 @@ export class VisualsService implements IVisualsService {
   private constellationGraphics: Graphics | null = null
   private videoSprite: Sprite | null = null
   private asciiFilter: AsciiFilter | null = null
+  private glitchFilter: GlitchFilter | null = null
 
   constructor(
     public readonly canvasConfig: CanvasConfig,
@@ -65,6 +66,14 @@ export class VisualsService implements IVisualsService {
         this.app.stage.addChild(this.videoSprite)
         
         this.asciiFilter = new AsciiFilter(12)
+        this.glitchFilter = new GlitchFilter({
+          slices: 8,
+          offset: 40,
+          average: false,
+          red: [5, 5],
+          green: [-5, -5],
+          blue: [5, -5]
+        })
       }
 
       this.constellationGraphics = new Graphics()
@@ -186,6 +195,14 @@ export class VisualsService implements IVisualsService {
 
         if (mode === 'constellation' && this.asciiFilter) {
           this.videoSprite.filters = [this.asciiFilter]
+        } else if (mode === 'synesthesia' && this.glitchFilter) {
+          this.videoSprite.filters = [this.glitchFilter]
+          
+          // Anima o glitch filter de forma intermitente
+          if (Math.random() > 0.8) {
+            this.glitchFilter.seed = Math.random()
+            this.glitchFilter.refresh()
+          }
         } else {
           this.videoSprite.filters = []
         }
