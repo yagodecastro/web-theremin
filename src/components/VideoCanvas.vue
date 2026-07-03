@@ -41,7 +41,7 @@ defineExpose({ toggleFullscreen })
   >
     <video
       ref="videoElement"
-      class="absolute inset-0 w-full h-full object-cover -scale-x-100"
+      class="absolute inset-0 w-full h-full object-cover -scale-x-100 transition-opacity duration-300"
       :style="{ opacity: store.showCamera ? store.cameraOpacity : 0 }"
       autoplay
       muted

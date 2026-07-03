@@ -36,7 +36,9 @@ export class VisualsService implements IVisualsService {
         height: this.canvasConfig.height,
         antialias: false,
         resolution: window.devicePixelRatio || 1,
-        backgroundColor: this.canvasConfig.backgroundColor
+        backgroundColor: this.canvasConfig.backgroundColor,
+        backgroundAlpha: 0,
+        clearBeforeRender: true
       })
       this.particleContainer = new Container()
       this.app.stage.addChild(this.particleContainer)

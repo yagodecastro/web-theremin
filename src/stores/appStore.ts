@@ -31,7 +31,7 @@ export const useAppStore = defineStore('appStore', () => {
   const gestureActive = ref(false)
   const lastGesturePosition = ref<{ x: number; y: number } | null>(null)
   const showCamera = ref(false)
-  const cameraOpacity = ref(0.2)
+  const cameraOpacity = ref(0.6)
   const isFullscreen = ref(false)
   const debugInfoValue = reactive<Array<{ key: string; value: string | undefined }>>([])
   const devices = ref({
