@@ -14,6 +14,7 @@ export interface SystemPerformanceConfig {
   readonly poolSize: number
   readonly maxParticlesPerEffect: number
   readonly maxTextureCacheSize: number
+  readonly lowPerformance?: boolean
 }
 
 /** @description Configurações da Webcam. */

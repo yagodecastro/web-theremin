@@ -264,7 +264,10 @@ export class VisualsService implements IVisualsService {
         this.videoSprite.visible = true
         this.videoSprite.alpha = this.getCameraOpacity()
 
-        if (mode === 'constellation' && this.asciiFilter) {
+        if (this.systemPerformance.lowPerformance) {
+          // Desativa filtros complexos de shader na GPU em modo de baixo desempenho
+          this.videoSprite.filters = []
+        } else if (mode === 'constellation' && this.asciiFilter) {
           this.videoSprite.filters = [this.asciiFilter]
           // O tamanho do ASCII reage ao movimento das mãos
           // Menos movimento = maior (abstrato), mais movimento = menor (detalhado)

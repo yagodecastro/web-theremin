@@ -29,7 +29,11 @@ export class GestureDetector implements IGestureDetector {
   ) {
     const webcamFps = webcamConfig.frameRate.ideal ?? 30
     // Divisor inteiro: a cada quantos frames do loop rAF a detecção facial dispara
-    this.faceDetectDivisor = Math.max(1, Math.round(webcamFps / mediaPipeConfig.faceDetectionFps))
+    if (mediaPipeConfig.faceDetectionFps > 0) {
+      this.faceDetectDivisor = Math.max(1, Math.round(webcamFps / mediaPipeConfig.faceDetectionFps))
+    } else {
+      this.faceDetectDivisor = Infinity
+    }
   }
 
   /** @description Registra um callback para monitoramento de saúde do serviço. */
@@ -117,14 +121,16 @@ export class GestureDetector implements IGestureDetector {
       vision,
       this.mediaPipeConfig.handLandmarkerOptions
     )
-    this.faceDetector = await FaceDetector.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath:
-          'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
-        delegate: 'GPU'
-      },
-      runningMode: 'VIDEO'
-    })
+    if (this.mediaPipeConfig.faceDetectionFps > 0) {
+      this.faceDetector = await FaceDetector.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath:
+            'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
+          delegate: 'GPU'
+        },
+        runningMode: 'VIDEO'
+      })
+    }
     await new Promise(resolve => setTimeout(resolve, this.mediaPipeConfig.initTimeout))
     this.isMediaPipeReady = true
   }
@@ -205,6 +211,11 @@ export class GestureDetector implements IGestureDetector {
       console.error('Erro ao processar face:', error)
       return null
     }
+  }
+
+  /** @description Retorna se o detector facial está ativo e inicializado. */
+  hasFaceDetector(): boolean {
+    return this.faceDetector !== null
   }
 
   /** @description Valida se os dados de landmarks da mão são consistentes. */

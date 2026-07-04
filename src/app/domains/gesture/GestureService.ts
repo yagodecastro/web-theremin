@@ -32,20 +32,22 @@ export class GestureService implements IGestureService {
   async detectHands(): Promise<HandLandmarkerResult | null> {
     const handData = await this.detector.detectHands()
 
-    // Executa a detecção de face em um tick separado do event loop (setTimeout 0).
-    // Isso garante que o som (altamente sensível a latência) seja atualizado
-    // e o frame principal com as mãos seja renderizado ANTES que o processamento
-    // da face bloqueie a thread principal.
-    setTimeout(async () => {
-      try {
-        const faceData = await this.detector.detectFace()
-        if (faceData) {
-          this.processEyes(faceData)
+    if (this.detector.hasFaceDetector()) {
+      // Executa a detecção de face em um tick separado do event loop (setTimeout 0).
+      // Isso garante que o som (altamente sensível a latência) seja atualizado
+      // e o frame principal com as mãos seja renderizado ANTES que o processamento
+      // da face bloqueie a thread principal.
+      setTimeout(async () => {
+        try {
+          const faceData = await this.detector.detectFace()
+          if (faceData) {
+            this.processEyes(faceData)
+          }
+        } catch (error) {
+          console.error('Erro na detecção de face assíncrona:', error)
         }
-      } catch (error) {
-        console.error('Erro na detecção de face assíncrona:', error)
-      }
-    }, 0)
+      }, 0)
+    }
 
     return handData
   }

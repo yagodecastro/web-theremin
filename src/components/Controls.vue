@@ -302,13 +302,53 @@ const switchCamera = async (value: string) => {
         <Settings class="w-4 h-4" />
         Sistema
       </h3>
-      <ActionButton
-        :icon="store.isFullscreen ? Minimize : Maximize"
-        :label="store.isFullscreen ? 'EXIT FULL' : 'FULLSCREEN'"
-        :variant="store.isFullscreen ? 'primary' : 'secondary'"
-        class="w-full"
-        @click="emit('fullscreen')"
-      />
+      <div class="space-y-3">
+        <!-- Modo de Desempenho Otimizado -->
+        <div class="rounded border border-retro-gray-700 bg-retro-black/40 p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <span
+              class="flex items-center gap-1.5 text-xs font-typewriter uppercase tracking-wider text-neon-green"
+            >
+              <Zap class="w-3.5 h-3.5" />
+              Modo Móvel / Otimizado
+            </span>
+            <button
+              id="toggle-performance-btn"
+              role="switch"
+              class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none"
+              :class="
+                store.lowPerformanceMode
+                  ? 'bg-neon-green/30 border-neon-green'
+                  : 'bg-slate-600 border-slate-500'
+              "
+              :aria-checked="store.lowPerformanceMode"
+              aria-label="Ativar modo otimizado para celulares"
+              @click="store.setLowPerformanceMode(!store.lowPerformanceMode)"
+            >
+              <span
+                class="pointer-events-none inline-block h-3.5 w-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out mt-px"
+                :class="
+                  store.lowPerformanceMode
+                    ? 'translate-x-3.5 bg-neon-green'
+                    : 'translate-x-0.5 bg-slate-200'
+                "
+              />
+            </button>
+          </div>
+          <p class="text-[10px] text-slate-400 font-mono leading-normal">
+            Recomendado para celulares e dispositivos antigos. Reduz o FPS da IA, desativa a
+            detecção facial (olhos) e desliga filtros gráficos pesados de vídeo.
+          </p>
+        </div>
+
+        <ActionButton
+          :icon="store.isFullscreen ? Minimize : Maximize"
+          :label="store.isFullscreen ? 'EXIT FULL' : 'FULLSCREEN'"
+          :variant="store.isFullscreen ? 'primary' : 'secondary'"
+          class="w-full"
+          @click="emit('fullscreen')"
+        />
+      </div>
     </section>
   </div>
 </template>

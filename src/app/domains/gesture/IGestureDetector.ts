@@ -6,6 +6,8 @@ export interface IGestureDetector {
   detectHands(): Promise<HandLandmarkerResult | null>
   /** @description Detecta faces no frame de vídeo atual. */
   detectFace(): Promise<FaceDetectorResult | null>
+  /** @description Retorna se o detector facial está ativo e inicializado. */
+  hasFaceDetector(): boolean
   /** @description Troca a câmera ativa. */
   switchCamera(deviceId: string): Promise<void>
   /** @description Define um callback para verificação de saúde. */

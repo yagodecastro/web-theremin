@@ -95,14 +95,6 @@ const webcamConfig: WebcamConfig = {
   frameRate: { ideal: 30, max: 60 }
 } as const
 
-const systemPerformanceConfig: SystemPerformanceConfig = {
-  targetFPS: webcamConfig.frameRate?.ideal ?? 30,
-  maxParticles: 5000,
-  poolSize: 500,
-  maxParticlesPerEffect: 150,
-  maxTextureCacheSize: 100
-} as const
-
 // BASE_URL é '/' em dev/Vercel e '/web-theremin/' no build do GitHub Pages (sempre termina com '/').
 // Usar BASE_URL garante que os assets do MediaPipe sejam resolvidos corretamente em qualquer base path.
 const mediaPipePath = (suffix: string) => `${import.meta.env.BASE_URL}${suffix}`
@@ -133,13 +125,44 @@ const canvasConfig: CanvasConfig = {
   backgroundColor: 0x000000
 }
 
-/** @description Configuração padrão da aplicação. */
-export const defaultConfig: AppConfig = {
-  core: {
-    mediaPipe: mediaPipeCoreConfig,
-    systemPerformance: systemPerformanceConfig,
-    webcam: webcamConfig,
-    canvas: canvasConfig
-  },
-  domains: { gestures: gestureConfig, midi: midiConfig, visuals: visualsConfig }
+/** @description Retorna a configuração da aplicação com base no perfil de desempenho. */
+export function getAppConfig(lowPerformance: boolean): AppConfig {
+  const customWebcam: WebcamConfig = {
+    ...webcamConfig,
+    width: lowPerformance ? { ideal: 480 } : { ideal: 640 },
+    height: lowPerformance ? { ideal: 360 } : { ideal: 480 },
+    frameRate: lowPerformance ? { ideal: 15, max: 20 } : { ideal: 30, max: 60 }
+  }
+
+  const customPerformance: SystemPerformanceConfig = {
+    targetFPS: lowPerformance ? 15 : (webcamConfig.frameRate?.ideal ?? 30),
+    maxParticles: lowPerformance ? 600 : 5000,
+    poolSize: lowPerformance ? 100 : 500,
+    maxParticlesPerEffect: lowPerformance ? 25 : 150,
+    maxTextureCacheSize: lowPerformance ? 30 : 100,
+    lowPerformance
+  }
+
+  const customMediaPipe: MediaPipeConfig = {
+    ...mediaPipeCoreConfig,
+    // Desativa a detecção facial em modo de baixo desempenho para evitar carregar/executar BlazeFace
+    faceDetectionFps: lowPerformance ? 0 : 10
+  }
+
+  return {
+    core: {
+      mediaPipe: customMediaPipe,
+      systemPerformance: customPerformance,
+      webcam: customWebcam,
+      canvas: canvasConfig
+    },
+    domains: {
+      gestures: gestureConfig,
+      midi: midiConfig,
+      visuals: visualsConfig
+    }
+  }
 }
+
+/** @description Configuração padrão da aplicação. */
+export const defaultConfig: AppConfig = getAppConfig(false)

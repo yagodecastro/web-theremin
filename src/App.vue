@@ -4,7 +4,7 @@ import { AppController } from '@/app/core/AppController.ts'
 import { useAppStore } from '@/stores/appStore'
 import SideMenu from '@/components/SideMenu.vue'
 import VideoCanvas from '@/components/VideoCanvas.vue'
-import { defaultConfig } from '@/app/shared/config/defaults.ts'
+import { getAppConfig } from '@/app/shared/config/defaults.ts'
 import { Settings, Play, Pause, RotateCcw } from 'lucide-vue-next'
 
 const videoElement = ref<HTMLVideoElement>()
@@ -52,6 +52,23 @@ watch(
   }
 )
 
+watch(
+  () => store.lowPerformanceMode,
+  async newVal => {
+    store.addSystemLog(
+      'info',
+      `App.vue: Modo de desempenho alterado para: ${newVal ? 'Otimizado' : 'Normal'}`
+    )
+    if (store.status !== 'idle') {
+      store.addSystemLog(
+        'info',
+        'App.vue: Reiniciando sistema para aplicar novas configurações de desempenho...'
+      )
+      await handleFullSystemRestart()
+    }
+  }
+)
+
 /**
  * Tenta inicializar o sistema principal.
  * Só executa se ambos os elementos (video e canvas) estiverem prontos
@@ -74,7 +91,7 @@ const tryInitializeSystem = async () => {
           'AppController.vue: Iniciando construção da instância AppController...'
         )
       }
-      const app = new AppController(defaultConfig, store, store.audioMode)
+      const app = new AppController(getAppConfig(store.lowPerformanceMode), store, store.audioMode)
       appInstance = app
       store.setAppSystem(app)
 

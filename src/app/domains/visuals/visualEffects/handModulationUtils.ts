@@ -47,7 +47,9 @@ export function createHandModulationEffect(
 
   // Em sinestesia, emitimos mais partículas. Em constelação, emitimos menos para não poluir as linhas.
   let multiplier = config.particleCountMultiplier
-  if (mode === 'synesthesia') {
+  if (visualsService.systemPerformance.lowPerformance) {
+    multiplier *= 0.3 // Reduz em 70% o número de partículas em modo de baixa performance
+  } else if (mode === 'synesthesia') {
     multiplier *= 1.5
   } else if (mode === 'constellation') {
     multiplier *= 0.4

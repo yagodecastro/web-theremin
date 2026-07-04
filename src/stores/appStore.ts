@@ -37,6 +37,7 @@ export const useAppStore = defineStore('appStore', () => {
     }
     selectedMidiOutput?: string
     selectedCamera?: string
+    lowPerformanceMode?: boolean
   }
 
   // Load saved settings from LocalStorage
@@ -59,6 +60,21 @@ export const useAppStore = defineStore('appStore', () => {
   const audioMode = ref<'tone' | 'midi'>(savedSettings.audioMode || 'tone')
   const poeticMode = ref<'classic' | 'synesthesia' | 'constellation'>(
     savedSettings.poeticMode || 'constellation'
+  )
+
+  // Detecta se é um dispositivo móvel ou limitado
+  const isMobileDevice = () => {
+    if (typeof window === 'undefined' || !window.navigator) return false
+    return (
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      window.innerWidth < 768
+    )
+  }
+
+  const lowPerformanceMode = ref<boolean>(
+    savedSettings.lowPerformanceMode !== undefined
+      ? savedSettings.lowPerformanceMode
+      : isMobileDevice()
   )
   const gestureActive = ref(false)
   const lastGesturePosition = ref<{ x: number; y: number } | null>(null)
@@ -248,6 +264,10 @@ export const useAppStore = defineStore('appStore', () => {
     poeticMode.value = mode
   }
 
+  const setLowPerformanceMode = (v: boolean) => {
+    lowPerformanceMode.value = v
+  }
+
   /** @description Alterna a visibilidade da câmera. */
   const toggleCamera = () => {
     showCamera.value = !showCamera.value
@@ -292,7 +312,8 @@ export const useAppStore = defineStore('appStore', () => {
         octaveRange: musicalConfig.value.octaveRange
       },
       selectedMidiOutput: devices.value.midi.selectedMidiOutput,
-      selectedCamera: devices.value.webcam.selectedCamera
+      selectedCamera: devices.value.webcam.selectedCamera,
+      lowPerformanceMode: lowPerformanceMode.value
     }),
     newSettings => {
       if (typeof window !== 'undefined' && window.localStorage) {
@@ -348,7 +369,9 @@ export const useAppStore = defineStore('appStore', () => {
     closeSideMenu,
     addDebugInfo,
     setAudioMode,
-    setPoeticMode
+    setPoeticMode,
+    lowPerformanceMode,
+    setLowPerformanceMode
   }
 })
 

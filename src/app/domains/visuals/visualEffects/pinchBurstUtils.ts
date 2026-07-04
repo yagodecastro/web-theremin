@@ -10,10 +10,12 @@ export function createPinchBurstEffect(
 ): void {
   const config = visualsService.visualEffectsConfig.pinchBurst
   const maxParticles = visualsService.getMaxParticlesPerEffect()
-  const particleCount = Math.min(
-    config.particleCountBase + Math.floor(options.intensity * config.particleCountMultiplier),
-    maxParticles
-  )
+  let particleCount =
+    config.particleCountBase + Math.floor(options.intensity * config.particleCountMultiplier)
+  if (visualsService.systemPerformance.lowPerformance) {
+    particleCount = Math.floor(particleCount * 0.3) // Reduz em 70% o número de partículas
+  }
+  particleCount = Math.min(particleCount, maxParticles)
   if (particleCount === 0) {
     return
   }
