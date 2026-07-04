@@ -32,6 +32,8 @@ export interface MediaPipeConfig {
   readonly minTrackingConfidence: number
   readonly handLandmarkerOptions: HandLandmarkerOptions
   readonly wasmPath: string
+  /** Taxa de detecção facial em fps. Deve ser ≤ targetFPS da webcam (padrão: 10). */
+  readonly faceDetectionFps: number
 }
 
 /** @description Configuração principal e unificada da aplicação. */

@@ -14,12 +14,17 @@ export class GestureDetector implements IGestureDetector {
   private isMediaPipeReady = false
   private lastVideoTime = -1
   private faceDetectCounter = 0
+  private readonly faceDetectDivisor: number
   private healthCheckCallback?: (error: Error) => void
 
   constructor(
     private webcamConfig: WebcamConfig,
     private mediaPipeConfig: MediaPipeConfig
-  ) {}
+  ) {
+    const webcamFps = webcamConfig.frameRate.ideal ?? 30
+    // Divisor inteiro: a cada quantos frames do loop rAF a detecção facial dispara
+    this.faceDetectDivisor = Math.max(1, Math.round(webcamFps / mediaPipeConfig.faceDetectionFps))
+  }
 
   /** @description Registra um callback para monitoramento de saúde do serviço. */
   setHealthCheckCallback(callback: (error: Error) => void): void {
@@ -185,9 +190,9 @@ export class GestureDetector implements IGestureDetector {
       return null
     }
 
-    // Executa a cada 2 frames para otimização de performance (throttling)
+    // Throttle: executa a cada `faceDetectDivisor` frames (calculado de faceDetectionFps)
     this.faceDetectCounter++
-    if (this.faceDetectCounter % 2 !== 0) {
+    if (this.faceDetectCounter % this.faceDetectDivisor !== 0) {
       return null
     }
 

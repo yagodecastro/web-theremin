@@ -122,7 +122,9 @@ const mediaPipeCoreConfig: MediaPipeConfig = {
   initTimeout: 1000,
   minHandDetectionConfidence: 0.3,
   minHandPresenceConfidence: 0.5,
-  minTrackingConfidence: 0.3
+  minTrackingConfidence: 0.3,
+  // 10 fps é suficiente para rastrear olhos — reduz carga da CPU vs. 15 fps anterior
+  faceDetectionFps: 10
 }
 
 const canvasConfig: CanvasConfig = {
