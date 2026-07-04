@@ -7,6 +7,13 @@ export default defineConfig({
   base: process.env.GITHUB_PAGES ? '/web-theremin/' : '/',
   plugins: [vue(), tailwindcss()],
 
+  // Garante que Workers e AudioWorklets (ex.: Tone.js) sejam empacotados como ES modules.
+  // Sem isso, Vite pode criar data URLs com MIME type 'video/mp2t' (padrão IANA para .ts),
+  // fazendo o browser rejeitar o módulo com "Expected a JavaScript module script".
+  worker: {
+    format: 'es'
+  },
+
   server: {
     watch: {
       usePolling: true

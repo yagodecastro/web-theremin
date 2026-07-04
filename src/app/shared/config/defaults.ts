@@ -103,23 +103,27 @@ const systemPerformanceConfig: SystemPerformanceConfig = {
   maxTextureCacheSize: 100
 } as const
 
+// BASE_URL é '/' em dev/Vercel e '/web-theremin/' no build do GitHub Pages (sempre termina com '/').
+// Usar BASE_URL garante que os assets do MediaPipe sejam resolvidos corretamente em qualquer base path.
+const mediaPipePath = (suffix: string) => `${import.meta.env.BASE_URL}${suffix}`
+
 const mediaPipeCoreConfig: MediaPipeConfig = {
   handLandmarkerOptions: {
     runningMode: 'VIDEO',
     numHands: 2,
     baseOptions: {
       delegate: 'GPU',
-      // Modelo servido localmente — elimina round-trip ao CDN do Google na inicialização
-      modelAssetPath: '/mediapipe/hand_landmarker.task'
+      // Modelo servido localmente — elimina round-trip ao CDN na inicialização
+      modelAssetPath: mediaPipePath('mediapipe/hand_landmarker.task')
     }
   },
   // WASM servido localmente de /public/mediapipe/wasm/ (copiado de node_modules em postinstall)
-  wasmPath: '/mediapipe/wasm',
+  wasmPath: mediaPipePath('mediapipe/wasm'),
   initTimeout: 1000,
   minHandDetectionConfidence: 0.3,
   minHandPresenceConfidence: 0.5,
   minTrackingConfidence: 0.3
-} as const
+}
 
 const canvasConfig: CanvasConfig = {
   width: 640,
