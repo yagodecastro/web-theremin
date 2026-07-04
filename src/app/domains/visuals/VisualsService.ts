@@ -69,12 +69,12 @@ export class VisualsService implements IVisualsService {
         this.videoSprite = new Sprite(videoTexture)
         this.videoSprite.width = this.canvasConfig.width
         this.videoSprite.height = this.canvasConfig.height
-        // Removemos o flip interno do WebGL porque o canvas inteiro 
+        // Removemos o flip interno do WebGL porque o canvas inteiro
         // já é flipado via CSS (-scale-x-100) para espelhar a imagem corretamente!
         this.app.stage.addChild(this.videoSprite)
-        
+
         this.asciiFilter = new AsciiFilter(12)
-        
+
         this.hslFilter = new HslAdjustmentFilter({
           hue: 0,
           saturation: 0.5,
@@ -82,7 +82,7 @@ export class VisualsService implements IVisualsService {
           colorize: false,
           alpha: 1
         })
-        
+
         this.rgbSplitFilter = new RGBSplitFilter({
           red: { x: -5, y: 0 },
           green: { x: 0, y: 5 },
@@ -139,7 +139,7 @@ export class VisualsService implements IVisualsService {
     }
     this.evictCacheIfNeeded()
     const graphics = new Graphics()
-    
+
     if (shape === 'square') {
       graphics.rect(-size / 2, -size / 2, size, size)
     } else if (shape === 'triangle') {
@@ -149,7 +149,7 @@ export class VisualsService implements IVisualsService {
     } else {
       graphics.circle(0, 0, size)
     }
-    
+
     graphics.fill({ color, alpha: 1 })
     const texture = this.app!.renderer.generateTexture(graphics)
     graphics.destroy()
@@ -224,7 +224,7 @@ export class VisualsService implements IVisualsService {
 
     // Decai a intensidade suavemente se as mãos estiverem paradas
     this.interactionIntensity = Math.max(0, this.interactionIntensity - 0.02)
-    
+
     // Decai o timeout de detecção dos olhos para limpá-los se a pessoa sair da câmera
     this.eyeDetectionTimeout++
     if (this.eyeDetectionTimeout > 15) {
@@ -257,38 +257,36 @@ export class VisualsService implements IVisualsService {
     } else {
       this.currentRightEye = null
     }
-    
+
     // Atualiza o sprite de vídeo
     if (this.videoSprite) {
       if (this.getShowCamera()) {
         this.videoSprite.visible = true
         this.videoSprite.alpha = this.getCameraOpacity()
-        
+
         if (mode === 'constellation' && this.asciiFilter) {
           this.videoSprite.filters = [this.asciiFilter]
           // O tamanho do ASCII reage ao movimento das mãos
           // Menos movimento = maior (abstrato), mais movimento = menor (detalhado)
           const targetSize = 12 + (1 - this.interactionIntensity) * 16
           this.asciiFilter.size += (targetSize - this.asciiFilter.size) * 0.1
-          
         } else if (mode === 'synesthesia' && this.hslFilter && this.rgbSplitFilter) {
           this.videoSprite.filters = [this.hslFilter, this.rgbSplitFilter]
-          
+
           this.time += 0.01
-          
+
           // Efeito Psicodélico: Rotação contínua de matiz (Hue shift)
           // Vai de -180 a 180 graus ciclicamente
-          this.hslFilter.hue = (Math.sin(this.time) * 180)
-          
+          this.hslFilter.hue = Math.sin(this.time) * 180
+
           // Efeito "Respiração / LSD": Separação de canais RGB pulsante
           // A intensidade da separação reage MUITO ao movimento das mãos!
-          const activeSplit = 2 + (this.interactionIntensity * 30) // De 2px até 32px de separação
+          const activeSplit = 2 + this.interactionIntensity * 30 // De 2px até 32px de separação
           const splitBase = Math.sin(this.time * 2) * activeSplit
-          
+
           this.rgbSplitFilter.red = { x: -splitBase, y: splitBase }
           this.rgbSplitFilter.green = { x: splitBase, y: -splitBase }
           this.rgbSplitFilter.blue = { x: splitBase, y: splitBase }
-          
         } else {
           this.videoSprite.filters = []
         }
@@ -299,7 +297,10 @@ export class VisualsService implements IVisualsService {
 
     if (this.constellationGraphics) {
       this.constellationGraphics.clear()
-      if ((mode === 'synesthesia' || mode === 'constellation') && (this.currentLeftEye || this.currentRightEye)) {
+      if (
+        (mode === 'synesthesia' || mode === 'constellation') &&
+        (this.currentLeftEye || this.currentRightEye)
+      ) {
         this.drawEyeEffects(mode)
       }
     }
@@ -346,7 +347,7 @@ export class VisualsService implements IVisualsService {
 
     // Aumenta a intensidade global quando há atividade (limitado a 1)
     this.interactionIntensity = Math.min(1, this.interactionIntensity + 0.1)
-    
+
     const { type, ...options } = effect
     if (type === 'pinchBurst') {
       this.emitPinchBurst(options as Omit<PinchBurstEffectData, 'type'>)
@@ -425,19 +426,31 @@ export class VisualsService implements IVisualsService {
 
       if (left) {
         g.setStrokeStyle({ width: 0 })
-        g.circle(left.x * w, left.y * h, 25 * pulse).fill({ color: new Color(`hsl(${hue}, 100%, 50%)`), alpha: 0.15 })
+        g.circle(left.x * w, left.y * h, 25 * pulse).fill({
+          color: new Color(`hsl(${hue}, 100%, 50%)`),
+          alpha: 0.15
+        })
         g.circle(left.x * w, left.y * h, 8 * pulse).fill({ color: 0xffffff, alpha: 0.4 })
-        g.circle(left.x * w, left.y * h, 3).fill({ color: new Color(`hsl(${(hue + 180) % 360}, 100%, 50%)`), alpha: 0.8 })
+        g.circle(left.x * w, left.y * h, 3).fill({
+          color: new Color(`hsl(${(hue + 180) % 360}, 100%, 50%)`),
+          alpha: 0.8
+        })
       }
       if (right) {
         g.setStrokeStyle({ width: 0 })
-        g.circle(right.x * w, right.y * h, 25 * pulse).fill({ color: new Color(`hsl(${hue}, 100%, 50%)`), alpha: 0.15 })
+        g.circle(right.x * w, right.y * h, 25 * pulse).fill({
+          color: new Color(`hsl(${hue}, 100%, 50%)`),
+          alpha: 0.15
+        })
         g.circle(right.x * w, right.y * h, 8 * pulse).fill({ color: 0xffffff, alpha: 0.4 })
-        g.circle(right.x * w, right.y * h, 3).fill({ color: new Color(`hsl(${(hue + 180) % 360}, 100%, 50%)`), alpha: 0.8 })
+        g.circle(right.x * w, right.y * h, 3).fill({
+          color: new Color(`hsl(${(hue + 180) % 360}, 100%, 50%)`),
+          alpha: 0.8
+        })
       }
     } else if (mode === 'constellation') {
       g.setStrokeStyle({ width: 1, color: 0x00ffff, alpha: 0.8 })
-      
+
       const drawCross = (eye: { x: number; y: number }) => {
         const ex = eye.x * w
         const ey = eye.y * h
@@ -445,17 +458,17 @@ export class VisualsService implements IVisualsService {
         g.lineTo(ex + 15, ey)
         g.moveTo(ex, ey - 15)
         g.lineTo(ex, ey + 15)
-        
+
         // Losango
         g.moveTo(ex, ey - 8)
         g.lineTo(ex + 8, ey)
         g.lineTo(ex, ey + 8)
         g.lineTo(ex - 8, ey)
         g.lineTo(ex, ey - 8)
-        
+
         g.circle(ex, ey, 2).fill({ color: 0x00ffff, alpha: 0.9 })
       }
-      
+
       if (left) drawCross(left)
       if (right) drawCross(right)
     }

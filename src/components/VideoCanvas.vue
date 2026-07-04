@@ -36,7 +36,7 @@ defineExpose({ toggleFullscreen })
 <template>
   <div
     ref="container"
-    class="max-w-5xl mx-auto aspect-4/3 max-h-full relative w-full h-full rounded-lg overflow-hidden bg-black"
+    class="relative w-full h-full overflow-hidden bg-black"
     @dblclick="toggleFullscreen"
   >
     <video
@@ -50,20 +50,6 @@ defineExpose({ toggleFullscreen })
       ref="visualsContainer"
       class="absolute inset-0 w-full h-full object-cover -scale-x-100 pointer-events-none"
     />
-
-    <div class="absolute top-4 right-4 flex flex-col gap-2">
-      <div
-        :class="[
-          'w-3 h-3 rounded-full',
-          store.isReady || store.isRunning
-            ? 'bg-green-500'
-            : store.hasError
-              ? 'bg-red-500'
-              : 'bg-yellow-500'
-        ]"
-        :title="store.statusMessage"
-      />
-    </div>
 
     <div
       v-if="!store.isReady && !store.isRunning"

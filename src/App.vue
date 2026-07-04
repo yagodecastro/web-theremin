@@ -1,25 +1,56 @@
 <script lang="ts" setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { AppController } from '@/app/core/AppController.ts'
 import { useAppStore } from '@/stores/appStore'
-import MainHeader from '@/components/MainHeader.vue'
-import Controls from '@/components/Controls.vue'
+import SideMenu from '@/components/SideMenu.vue'
 import VideoCanvas from '@/components/VideoCanvas.vue'
-import LogTerminal from '@/components/LogTerminal.vue'
 import { defaultConfig } from '@/app/shared/config/defaults.ts'
-import AppFooter from '@/components/AppFooter.vue'
+import { Settings, Play, Pause, RotateCcw } from 'lucide-vue-next'
 
 const videoElement = ref<HTMLVideoElement>()
 const visualsCanvas = ref<HTMLCanvasElement>()
 const videoCanvasRef = ref<InstanceType<typeof VideoCanvas>>()
-const isControlsOpen = ref(true)
 const store = useAppStore()
 
-const toggleControls = () => {
-  isControlsOpen.value = !isControlsOpen.value
+let appInstance: AppController | null = null
+
+const isControlsVisible = ref(true)
+let autoHideTimeout: ReturnType<typeof setTimeout> | null = null
+
+const showControls = () => {
+  isControlsVisible.value = true
+  if (autoHideTimeout) {
+    clearTimeout(autoHideTimeout)
+    autoHideTimeout = null
+  }
+
+  if (store.isRunning) {
+    autoHideTimeout = setTimeout(() => {
+      if (store.isRunning) {
+        isControlsVisible.value = false
+      }
+    }, 2500)
+  }
 }
 
-let appInstance: AppController | null = null
+const handleUserActivity = () => {
+  showControls()
+}
+
+watch(
+  () => store.isRunning,
+  running => {
+    if (!running) {
+      if (autoHideTimeout) {
+        clearTimeout(autoHideTimeout)
+        autoHideTimeout = null
+      }
+      isControlsVisible.value = true
+    } else {
+      showControls()
+    }
+  }
+)
 
 /**
  * Tenta inicializar o sistema principal.
@@ -109,7 +140,6 @@ const handleStart = async () => {
     }
   } else {
     store.addSystemLog('warn', 'AppController.vue: Sistema não está pronto para iniciar.')
-    // Diagnóstico detalhado só em DEV (JSON.stringify tem custo)
     if (import.meta.env.DEV) {
       const diagnostics = store.systemDiagnostics
       store.addSystemLog('warn', `App.vue: Diagnóstico detalhado: ${JSON.stringify(diagnostics)}`)
@@ -197,15 +227,14 @@ const handlePanicMidi = () => {
   }
 }
 
-const handleSwitchAudioMode = async (mode: 'tone' | 'midi') => {
-  if (appInstance) {
-    try {
-      await appInstance.switchAudioMode(mode)
-      store.addSystemLog('info', `Modo de áudio alterado para: ${mode}`)
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      store.addSystemLog('error', `Erro ao trocar modo de áudio: ${errorMessage}`)
-    }
+/** Botão play/pause flutuante — inicia, pausa ou reinicia conforme o estado */
+const handlePlayPause = async () => {
+  if (store.hasError) {
+    await handleFullSystemRestart()
+  } else if (store.isRunning) {
+    handleStop()
+  } else {
+    await handleStart()
   }
 }
 
@@ -214,9 +243,18 @@ onMounted(() => {
     'info',
     'AppController.vue: Componente montado. Aguardando elementos de mídia...'
   )
+  window.addEventListener('mousemove', handleUserActivity)
+  window.addEventListener('mousedown', handleUserActivity)
+  window.addEventListener('touchstart', handleUserActivity)
 })
 
 onBeforeUnmount(async () => {
+  window.removeEventListener('mousemove', handleUserActivity)
+  window.removeEventListener('mousedown', handleUserActivity)
+  window.removeEventListener('touchstart', handleUserActivity)
+  if (autoHideTimeout) {
+    clearTimeout(autoHideTimeout)
+  }
   // Usa a instância guardada para chamar o destroy
   if (appInstance) {
     await appInstance.destroy()
@@ -226,79 +264,120 @@ onBeforeUnmount(async () => {
 </script>
 
 <template>
-  <div
-    class="w-full max-w-7xl mx-auto my-4 min-h-screen bg-retro-blue text-white font-mono pt-2 transition-colors duration-1000"
-  >
-    <div
-      class="transition-opacity duration-1000"
-    >
-      <MainHeader />
-    </div>
+  <!-- Canvas ocupa toda a viewport -->
+  <div class="fixed inset-0 bg-black overflow-hidden" role="main">
+    <VideoCanvas
+      ref="videoCanvasRef"
+      class="w-full h-full"
+      @video-ready="onVideoReady"
+      @visuals-ready="onVisualsReady"
+    />
 
-    <main class="flex-1 space-y-3 mt-3 relative">
-      <div
-        class="bg-dark-metal p-4 rounded-lg border-2 border-retro-gray-600 shadow-bevel transition-all duration-1000"
-      >
-        <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center gap-3">
-            <div class="w-1.5 h-5 bg-neon-cyan rounded-full animate-glow shadow-neon-cyan" />
-            <h2
-              class="text-neon-green font-typewriter font-bold text-base uppercase tracking-wider"
-            >
-              CONTROL INTERFACE
-            </h2>
-          </div>
-          <button
-            class="text-neon-cyan hover:text-white transition-colors text-xs font-bold flex items-center gap-1 border border-neon-cyan/30 px-2 py-1 rounded"
-            @click="toggleControls"
-          >
-            {{ isControlsOpen ? '▲ COLLAPSE' : '▼ EXPAND' }}
-          </button>
-        </div>
-
-        <div
-          v-show="isControlsOpen"
-          class="pt-2 border-t border-retro-gray-700 mt-2 transition-all duration-300"
+    <!-- Botões flutuantes: configs e play/pause -->
+    <Transition name="fade-buttons">
+      <div v-show="isControlsVisible" class="absolute bottom-6 left-6 flex items-center gap-4 z-30">
+        <!-- Botão de configurações -->
+        <button
+          id="open-settings-btn"
+          class="floating-btn"
+          :aria-label="store.isSideMenuOpen ? 'Fechar configurações' : 'Abrir configurações'"
+          :aria-expanded="store.isSideMenuOpen"
+          aria-controls="side-menu"
+          @click="store.toggleSideMenu"
         >
-          <Controls
-            @panic="handlePanicMidi"
-            @restart="handleRestart"
-            @start="handleStart"
-            @stop="handleStop"
-            @full-restart="handleFullSystemRestart"
-            @switch-audio-mode="handleSwitchAudioMode"
-            @fullscreen="handleFullscreen"
-          />
-        </div>
-      </div>
+          <Settings class="w-5 h-5" />
+        </button>
 
-      <div
-        class="grid grid-cols-1 gap-3 relative z-0 transition-all duration-1000"
-      >
-        <div class="lg:col-span-2 space-y-3">
-          <div
-            class="p-1 rounded border shadow-crt transition-all duration-1000 border-retro-gray-700"
-          >
-            <VideoCanvas
-              ref="videoCanvasRef"
-              @video-ready="onVideoReady"
-              @visuals-ready="onVisualsReady"
-            />
-          </div>
-        </div>
+        <!-- Botão play/pause/restart -->
+        <button
+          id="play-pause-btn"
+          class="floating-btn floating-btn--primary"
+          :class="{ 'floating-btn--danger': store.hasError }"
+          :disabled="store.isBusy && !store.hasError"
+          :aria-label="
+            store.isRunning ? 'Pausar' : store.hasError ? 'Reiniciar sistema' : 'Iniciar'
+          "
+          @click="handlePlayPause"
+        >
+          <RotateCcw v-if="store.hasError" class="w-5 h-5" />
+          <Pause v-else-if="store.isRunning" class="w-5 h-5" />
+          <Play v-else class="w-5 h-5" />
+        </button>
       </div>
+    </Transition>
 
-      <div
-        class="bg-dark-metal p-4 rounded-lg border-2 border-retro-gray-600 shadow-bevel transition-opacity duration-1000"
-      >
-        <LogTerminal />
-      </div>
-    </main>
-
-    <div
-      class="transition-opacity duration-1000"
-    >
-      <AppFooter />
-    </div>
+    <!-- SideMenu sobrepondo o canvas -->
+    <SideMenu
+      @close="store.closeSideMenu"
+      @panic="handlePanicMidi"
+      @restart="handleRestart"
+      @start="handleStart"
+      @stop="handleStop"
+      @full-restart="handleFullSystemRestart"
+      @fullscreen="handleFullscreen"
+    />
   </div>
 </template>
+
+<style>
+/* Botões flutuantes sobre o canvas */
+.floating-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 0.25rem; /* cantos retos arredondados coerentes */
+  background: var(--gradient-dark-metal);
+  border: 2px solid var(--color-retro-gray-600);
+  color: var(--color-retro-metal);
+  box-shadow: var(--shadow-bevel);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.floating-btn:hover {
+  border-color: var(--color-neon-cyan);
+  color: var(--color-neon-cyan);
+  box-shadow: var(--shadow-neon-cyan);
+  transform: scale(1.08);
+}
+
+.floating-btn:active {
+  box-shadow: var(--shadow-inset-metal);
+  transform: scale(0.96);
+}
+
+.floating-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.floating-btn--primary {
+  width: 3.75rem;
+  height: 3.75rem;
+  border-color: var(--color-neon-green);
+  color: var(--color-neon-green);
+}
+
+.floating-btn--primary:hover {
+  background: rgba(0, 255, 65, 0.15);
+  border-color: var(--color-neon-green);
+  color: #fff;
+  box-shadow: var(--shadow-neon-green);
+}
+
+.floating-btn--danger {
+  border-color: var(--color-neon-red);
+  color: var(--color-neon-red);
+}
+
+.floating-btn--danger:hover {
+  background: rgba(255, 7, 58, 0.15);
+  border-color: var(--color-neon-red);
+  color: #fff;
+  box-shadow: var(--shadow-neon-red);
+}
+</style>

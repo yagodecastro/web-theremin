@@ -1,35 +1,39 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useAppStore } from '@/stores/appStore'
-import ActionButton from './shared/ActionButton.vue'
+import { MidiService } from '@/app/domains/midi/MidiService'
 import LabeledSelect from './shared/LabeledSelect.vue'
+import SegmentedToggle from './shared/SegmentedToggle.vue'
+import ActionButton from './shared/ActionButton.vue'
 import {
-  Music,
-  ListMusic,
   ArrowDownUp,
-  Maximize2,
-  PlugZap,
-  Video,
   AudioLines,
-  Play,
-  RotateCcw,
-  Square,
-  Wrench,
-  TriangleAlert,
-  Camera,
+  ListMusic,
   Maximize,
   Minimize,
+  Settings,
+  Music,
   Palette,
+  PlugZap,
   Sparkles,
-  Zap
+  Video,
+  Zap,
+  Maximize2
 } from 'lucide-vue-next'
 
 const store = useAppStore()
 
+// ── Opções ───────────────────────────────────────────────────────────────────
+
 const poeticModeOptions = [
-  { value: 'classic', label: 'CLASSIC (UI)' },
+  { value: 'classic', label: 'CLASSIC' },
   { value: 'synesthesia', label: 'SYNESTHESIA' },
   { value: 'constellation', label: 'CONSTELLATION' }
+]
+
+const audioModeOptions = [
+  { value: 'tone', label: 'SYNTH' },
+  { value: 'midi', label: 'EXT. MIDI' }
 ]
 
 const poeticModeIcon = computed(() => {
@@ -44,7 +48,10 @@ const poeticModeIcon = computed(() => {
 })
 
 const midiOutputOptions = computed(() =>
-  store.devices.midi.availableMidiOutputs.map((output: string) => ({ value: output, label: output }))
+  store.devices.midi.availableMidiOutputs.map((output: string) => ({
+    value: output,
+    label: output
+  }))
 )
 
 const cameraOptions = computed(() =>
@@ -64,192 +71,261 @@ const octaveRangeOptions = [1, 2, 3, 4, 5].map(n => ({ value: String(n), label: 
 
 const baseOctaveOptions = [1, 2, 3, 4, 5, 6, 7].map(n => ({ value: String(n), label: `Oct ${n}` }))
 
+// ── Emits & handlers ─────────────────────────────────────────────────────────
+
 const emit = defineEmits<{
-  start: []
-  stop: []
-  restart: []
-  recovery: []
-  panic: []
-  'full-restart': []
-  'switch-audio-mode': [mode: 'tone' | 'midi']
   fullscreen: []
 }>()
 
-const handleStartClick = () => {
-  if (store.hasError) emit('full-restart')
-  else if (store.isRunning) emit('restart')
-  else emit('start')
+const setAudioMode = async (mode: 'tone' | 'midi') => {
+  store.setAudioMode(mode)
+  if (store.appSystem) {
+    try {
+      await store.appSystem.switchAudioMode(mode)
+      store.addSystemLog('info', `Modo de áudio alterado para: ${mode}`)
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error)
+      store.addSystemLog('error', `Erro ao trocar modo de áudio: ${msg}`)
+    }
+    return
+  }
+
+  // Sistema ainda não inicializado: habilita WebMIDI e lista outputs manualmente
+  if (mode === 'midi') {
+    await initMidiOutputsWithoutSystem()
+  } else {
+    store.setMidiOutputs([])
+  }
 }
 
-const toggleAudioMode = () => {
-  const next = store.audioMode === 'tone' ? 'midi' : 'tone'
-  store.setAudioMode(next)
-  emit('switch-audio-mode', next)
+/** @description Inicializa WebMIDI e popula a store com outputs disponíveis quando o
+ *  AppController ainda não foi criado (ex.: usuário troca modo antes de clicar em START).
+ */
+const initMidiOutputsWithoutSystem = async () => {
+  try {
+    await MidiService.enableWebMidi()
+    const outputNames = MidiService.getAvailableOutputs().map(o => o.name)
+    store.setMidiOutputs(outputNames)
+    store.addSystemLog(
+      'info',
+      outputNames.length > 0
+        ? `MIDI inicializado: ${outputNames.length} saída(s) encontrada(s)`
+        : 'MIDI inicializado: nenhum dispositivo de saída encontrado'
+    )
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error)
+    store.addSystemLog('error', `Erro ao inicializar MIDI: ${msg}`)
+  }
+}
+
+const switchCamera = async (value: string) => {
+  try {
+    store.selectCamera(value)
+    if (store.appSystem) await store.appSystem.switchCamera(value)
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error)
+    store.addSystemLog('error', `Falha ao trocar câmera: ${msg}`)
+    const current = store.devices.webcam.availableCameras.find(
+      (cam: { deviceId: string }) => cam.deviceId === store.devices.webcam.selectedCamera
+    )
+    if (current) store.selectCamera(current.deviceId)
+  }
 }
 </script>
 
 <template>
-  <div class="grid grid-cols-1 gap-4">
-    <!-- Linha 1: escala musical -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <LabeledSelect
-        :model-value="store.musicalConfig.tonic"
-        :options="tonicOptions"
-        label="TONIC"
-        variant="purple"
-        :icon="Music"
-        @update:model-value="store.setTonic"
-      />
-      <LabeledSelect
-        :model-value="store.musicalConfig.scaleName"
-        :options="scaleOptions"
-        label="SCALE"
-        variant="purple"
-        :icon="ListMusic"
-        @update:model-value="store.selectScale"
-      />
-      <LabeledSelect
-        :model-value="String(store.musicalConfig.baseOctave)"
-        :options="baseOctaveOptions"
-        label="BASE OCT"
-        variant="purple"
-        :icon="ArrowDownUp"
-        @update:model-value="v => store.setBaseOctave(Number(v))"
-      />
-      <LabeledSelect
-        :model-value="String(store.musicalConfig.octaveRange)"
-        :options="octaveRangeOptions"
-        label="RANGE"
-        variant="purple"
-        :icon="Maximize2"
-        @update:model-value="v => store.setOctaveRange(Number(v))"
-      />
-    </div>
-    <!-- Linha 2: dispositivos & poética -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-      <LabeledSelect
-        :model-value="store.poeticMode"
-        :options="poeticModeOptions"
-        label="VISUAL MODE"
-        variant="cyan"
-        :icon="poeticModeIcon"
-        @update:model-value="
-          v => store.setPoeticMode(v as 'classic' | 'synesthesia' | 'constellation')
-        "
-      />
-      <ActionButton
-        :label="store.audioMode === 'tone' ? 'TONE.JS' : 'MIDI'"
-        :variant="store.audioMode === 'tone' ? 'primary' : 'warning'"
-        :disabled="store.isBusy"
-        :icon="AudioLines"
-        @click="toggleAudioMode"
-      />
-      <LabeledSelect
-        v-if="store.audioMode === 'midi'"
-        :model-value="store.devices.midi.selectedMidiOutput"
-        :options="midiOutputOptions"
-        :disabled="store.isBusy"
-        label="MIDI OUT"
-        variant="amber"
-        :icon="PlugZap"
-        @update:model-value="
-          value => {
-            store.selectMidiOutput(value)
-            if (store.appSystem) store.appSystem.connectMidi(value)
-          }
-        "
-      />
-      <div
-        v-else
-        class="flex items-center gap-2 px-3 py-1 rounded border border-neon-cyan/30 text-neon-cyan/60 text-xs font-typewriter uppercase tracking-wider"
-      >
+  <div class="space-y-5">
+    <!-- ── Seção: Escala Musical ───────────────────────────────────────────── -->
+    <section aria-labelledby="section-scale">
+      <h3 id="section-scale" class="section-title">
+        <Music class="w-4 h-4" />
+        Escala Musical
+      </h3>
+      <div class="grid grid-cols-2 gap-3">
+        <LabeledSelect
+          :icon="Music"
+          :model-value="store.musicalConfig.tonic"
+          :options="tonicOptions"
+          label="TÔNICA"
+          variant="purple"
+          @update:model-value="store.setTonic"
+        />
+        <LabeledSelect
+          :icon="ListMusic"
+          :model-value="store.musicalConfig.scaleName"
+          :options="scaleOptions"
+          label="ESCALA"
+          variant="purple"
+          @update:model-value="store.selectScale"
+        />
+        <LabeledSelect
+          :icon="ArrowDownUp"
+          :model-value="String(store.musicalConfig.baseOctave)"
+          :options="baseOctaveOptions"
+          label="BASE OCT"
+          variant="purple"
+          @update:model-value="v => store.setBaseOctave(Number(v))"
+        />
+        <LabeledSelect
+          :icon="Maximize2"
+          :model-value="String(store.musicalConfig.octaveRange)"
+          :options="octaveRangeOptions"
+          label="RANGE"
+          variant="purple"
+          @update:model-value="v => store.setOctaveRange(Number(v))"
+        />
+      </div>
+    </section>
+
+    <!-- ── Seção: Áudio ────────────────────────────────────────────────────── -->
+    <section aria-labelledby="section-audio">
+      <h3 id="section-audio" class="section-title">
         <AudioLines class="w-4 h-4" />
-        DIRECT BROWSER AUDIO
-      </div>
-      <LabeledSelect
-        :model-value="store.devices.webcam.selectedCamera"
-        :options="cameraOptions"
-        :disabled="store.isBusy"
-        label="CAMERA"
-        variant="cyan"
-        :icon="Video"
-        @update:model-value="
-          async value => {
-            try {
-              store.selectCamera(value)
-              if (store.appSystem) {
-                await store.appSystem.switchCamera(value)
-              }
-            } catch (error) {
-              const errorMessage = error instanceof Error ? error.message : String(error)
-              store.addSystemLog('error', `Falha ao trocar câmera: ${errorMessage}`)
-              const currentCamera = store.devices.webcam.availableCameras.find(
-                (cam: { deviceId: string }) => cam.deviceId === store.devices.webcam.selectedCamera
-              )
-              if (currentCamera) {
-                store.selectCamera(currentCamera.deviceId)
-              }
+        Áudio
+      </h3>
+      <div class="space-y-3">
+        <SegmentedToggle
+          :disabled="store.isBusy"
+          :model-value="store.audioMode"
+          :options="audioModeOptions"
+          @update:model-value="v => setAudioMode(v as 'tone' | 'midi')"
+        />
+        <LabeledSelect
+          v-if="store.audioMode === 'midi'"
+          :disabled="store.isBusy"
+          :icon="PlugZap"
+          :model-value="store.devices.midi.selectedMidiOutput"
+          :options="midiOutputOptions"
+          label="MIDI OUT"
+          variant="amber"
+          @update:model-value="
+            value => {
+              store.selectMidiOutput(value)
+              if (store.appSystem) store.appSystem.connectMidi(value)
             }
-          }
-        "
-      />
-    </div>
-    <!-- Linha 3: ações -->
-    <div class="grid grid-cols-2 lg:grid-cols-5 gap-2">
-      <ActionButton
-        :disabled="store.isBusy && !store.hasError"
-        :label="store.hasError ? 'RESTART SYSTEM' : 'START'"
-        :variant="store.hasError ? 'warning' : store.isRunning ? 'secondary' : 'primary'"
-        :icon="store.hasError || store.isRunning ? RotateCcw : Play"
-        @click="handleStartClick"
-      />
-      <ActionButton
-        :disabled="!store.isRunning || store.isBusy"
-        :label="'STOP'"
-        :variant="'danger'"
-        :icon="Square"
-        @click="emit('stop')"
-      />
-      <ActionButton
-        v-if="store.hasError"
-        label="RECOVERY"
-        variant="warning"
-        :icon="Wrench"
-        @click="emit('recovery')"
-      />
-      <ActionButton
-        :disabled="store.audioMode === 'midi' && !store.devices.midi.selectedMidiOutput"
-        label="PANIC"
-        variant="danger"
-        :icon="TriangleAlert"
-        @click="emit('panic')"
-      />
-      <div class="flex flex-col gap-1">
-        <ActionButton
-          label="CAMERA"
-          :variant="store.showCamera ? 'primary' : 'secondary'"
-          class="flex-1"
-          :icon="Camera"
-          @click="store.toggleCamera"
+          "
         />
-        <input
-          v-if="store.showCamera"
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          :value="store.cameraOpacity"
-          class="w-full h-2 mt-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-neon-cyan"
-          @input="e => store.setCameraOpacity(Number((e.target as HTMLInputElement).value))"
-        />
+        <div
+          v-else
+          class="flex items-center gap-2 px-3 py-2 rounded border border-neon-cyan/20 text-neon-cyan/50 text-xs font-typewriter uppercase tracking-wider"
+        >
+          <AudioLines class="w-3.5 h-3.5 shrink-0" />
+          Browser Audio (Tone.js)
+        </div>
       </div>
+    </section>
+
+    <!-- ── Seção: Visual ───────────────────────────────────────────────────── -->
+    <section aria-labelledby="section-visual">
+      <h3 id="section-visual" class="section-title">
+        <Palette class="w-4 h-4" />
+        Visual
+      </h3>
+      <div class="space-y-3">
+        <LabeledSelect
+          :icon="poeticModeIcon"
+          :model-value="store.poeticMode"
+          :options="poeticModeOptions"
+          label="MODO VISUAL"
+          variant="cyan"
+          @update:model-value="
+            v => store.setPoeticMode(v as 'classic' | 'synesthesia' | 'constellation')
+          "
+        />
+        <!-- Câmera: seletor + toggle + opacity em bloco único -->
+        <div class="rounded border border-retro-gray-700 bg-retro-black/40 p-3 space-y-3">
+          <div class="flex items-center justify-between">
+            <span
+              class="flex items-center gap-1.5 text-xs font-typewriter uppercase tracking-wider text-neon-cyan"
+            >
+              <Video class="w-3.5 h-3.5" />
+              Câmera
+            </span>
+            <!-- Toggle switch ON/OFF câmera -->
+            <button
+              id="toggle-camera-btn"
+              role="switch"
+              class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none"
+              :class="
+                store.showCamera
+                  ? 'bg-neon-green/30 border-neon-green'
+                  : 'bg-slate-600 border-slate-500'
+              "
+              :aria-checked="store.showCamera"
+              :aria-label="store.showCamera ? 'Desativar câmera' : 'Ativar câmera'"
+              @click="store.toggleCamera"
+            >
+              <span
+                class="pointer-events-none inline-block h-3.5 w-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out mt-px"
+                :class="
+                  store.showCamera
+                    ? 'translate-x-3.5 bg-neon-green'
+                    : 'translate-x-0.5 bg-slate-200'
+                "
+              />
+            </button>
+          </div>
+          <LabeledSelect
+            :disabled="store.isBusy"
+            :icon="Video"
+            :model-value="store.devices.webcam.selectedCamera"
+            :options="cameraOptions"
+            label="DISPOSITIVO"
+            variant="cyan"
+            @update:model-value="switchCamera"
+          />
+          <!-- Slider de opacidade — só aparece quando câmera está ativa -->
+          <Transition name="fade">
+            <div v-if="store.showCamera" class="space-y-1">
+              <div class="flex items-center justify-between text-xs text-gray-300 font-mono">
+                <span>Opacidade</span>
+                <span>{{ Math.round(store.cameraOpacity * 100) }}%</span>
+              </div>
+              <input
+                :value="store.cameraOpacity"
+                class="w-full h-2 rounded-lg appearance-none cursor-pointer bg-retro-gray-700 accent-neon-cyan"
+                max="1"
+                min="0"
+                step="0.05"
+                type="range"
+                @input="e => store.setCameraOpacity(Number((e.target as HTMLInputElement).value))"
+              />
+            </div>
+          </Transition>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Seção: Sistema ──────────────────────────────────────────────────── -->
+    <section aria-labelledby="section-system">
+      <h3 id="section-system" class="section-title">
+        <Settings class="w-4 h-4" />
+        Sistema
+      </h3>
       <ActionButton
-        :disabled="!store.isRunning"
+        :icon="store.isFullscreen ? Minimize : Maximize"
         :label="store.isFullscreen ? 'EXIT FULL' : 'FULLSCREEN'"
         :variant="store.isFullscreen ? 'primary' : 'secondary'"
-        :icon="store.isFullscreen ? Minimize : Maximize"
+        class="w-full"
         @click="emit('fullscreen')"
       />
-    </div>
+    </section>
   </div>
 </template>
+
+<style scoped>
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-typewriter), monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgb(203 213 225); /* slate-300 para alto contraste */
+  margin-bottom: 0.625rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid rgb(75 85 99 / 0.6);
+}
+</style>

@@ -68,9 +68,10 @@ export class HandModulationHandler extends BaseGestureHandler {
       const alpha = 0.25 // Fator de suavização (menor = mais suave, maior = mais reativo)
       const smoothedX = lastSmoothed.x + alpha * (rawPosition.x - lastSmoothed.x)
       const smoothedY = lastSmoothed.y + alpha * (rawPosition.y - lastSmoothed.y)
-      const smoothedOpenness = openness !== null
-        ? lastSmoothed.openness + alpha * (rawOpenness - lastSmoothed.openness)
-        : lastSmoothed.openness
+      const smoothedOpenness =
+        openness !== null
+          ? lastSmoothed.openness + alpha * (rawOpenness - lastSmoothed.openness)
+          : lastSmoothed.openness
 
       this.lastSmoothedValues.set(handName, {
         x: smoothedX,
@@ -79,7 +80,12 @@ export class HandModulationHandler extends BaseGestureHandler {
       })
 
       if (this.hasSignificantChange(smoothedX, smoothedY, smoothedOpenness, handName)) {
-        this.processMidi(smoothedX, smoothedY, openness !== null ? smoothedOpenness : null, handName)
+        this.processMidi(
+          smoothedX,
+          smoothedY,
+          openness !== null ? smoothedOpenness : null,
+          handName
+        )
         this.lastProcessTimestamp.set(handName, timestamp)
       }
     })

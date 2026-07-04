@@ -44,7 +44,7 @@ export class AppController {
       await this.gestureService.initialize(videoElement, savedCamera || undefined)
       await this.visualsService.initialize(visualsCanvas, videoElement)
       const devices = await this.detectAvailableDevices()
-      
+
       const savedMidi = this.store.devices.midi.selectedMidiOutput
       const targetMidi = devices.midiOutputs.includes(savedMidi)
         ? savedMidi
@@ -83,7 +83,7 @@ export class AppController {
 
     this.gestureService.updateMidiService(this.midiService)
     this.serviceOrchestrator = this.setupServiceOrchestrator()
-    
+
     if (mode === 'midi') {
       const devices = await this.detectAvailableDevices()
       this.store.setMidiOutputs(devices.midiOutputs)

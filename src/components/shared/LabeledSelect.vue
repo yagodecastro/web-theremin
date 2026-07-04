@@ -48,7 +48,7 @@ const variantClasses = {
         :class="[variantClasses[variant].bg, variantClasses[variant].shadow]"
       />
       <span
-        class="text-xs uppercase tracking-wider font-typewriter flex items-center gap-1.5"
+        class="text-xs text-white uppercase tracking-wider font-typewriter flex items-center gap-1.5"
         :class="variantClasses[variant].text"
       >
         <component :is="icon" v-if="icon" class="w-3.5 h-3.5" />

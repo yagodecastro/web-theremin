@@ -1,4 +1,10 @@
-import { FilesetResolver, HandLandmarker, HandLandmarkerResult, FaceDetector, FaceDetectorResult } from '@mediapipe/tasks-vision'
+import {
+  FilesetResolver,
+  HandLandmarker,
+  HandLandmarkerResult,
+  FaceDetector,
+  FaceDetectorResult
+} from '@mediapipe/tasks-vision'
 import { IGestureDetector } from '@/app/domains/gesture/IGestureDetector.ts'
 import { normalizeHandLandmarks } from '@/app/shared/utils/utils'
 import { MediaPipeConfig, WebcamConfig } from '@/app/core'
@@ -80,7 +86,7 @@ export class GestureDetector implements IGestureDetector {
       videoConstraints.facingMode = this.webcamConfig.facingMode
     }
     const constraints: MediaStreamConstraints = { video: videoConstraints, audio: false }
-    
+
     try {
       this.stream = await navigator.mediaDevices.getUserMedia(constraints)
     } catch (error) {
@@ -113,7 +119,8 @@ export class GestureDetector implements IGestureDetector {
     )
     this.faceDetector = await FaceDetector.createFromOptions(vision, {
       baseOptions: {
-        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
+        modelAssetPath:
+          'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
         delegate: 'GPU'
       },
       runningMode: 'VIDEO'
@@ -181,12 +188,7 @@ export class GestureDetector implements IGestureDetector {
 
   /** @description Detecta faces no frame de vídeo atual (apenas olhos, etc.). */
   async detectFace(): Promise<FaceDetectorResult | null> {
-    if (
-      !this.isReady ||
-      !this.faceDetector ||
-      !this.videoElement ||
-      !this.isMediaPipeReady
-    ) {
+    if (!this.isReady || !this.faceDetector || !this.videoElement || !this.isMediaPipeReady) {
       return null
     }
 

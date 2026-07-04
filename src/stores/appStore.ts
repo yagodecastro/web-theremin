@@ -57,12 +57,19 @@ export const useAppStore = defineStore('appStore', () => {
   const status = ref<AppStatus>('idle')
   const error = ref<string | null>(null)
   const audioMode = ref<'tone' | 'midi'>(savedSettings.audioMode || 'tone')
-  const poeticMode = ref<'classic' | 'synesthesia' | 'constellation'>(savedSettings.poeticMode || 'classic')
+  const poeticMode = ref<'classic' | 'synesthesia' | 'constellation'>(
+    savedSettings.poeticMode || 'constellation'
+  )
   const gestureActive = ref(false)
   const lastGesturePosition = ref<{ x: number; y: number } | null>(null)
-  const showCamera = ref<boolean>(savedSettings.showCamera !== undefined ? savedSettings.showCamera : false)
-  const cameraOpacity = ref<number>(savedSettings.cameraOpacity !== undefined ? savedSettings.cameraOpacity : 0.6)
+  const showCamera = ref<boolean>(
+    savedSettings.showCamera !== undefined ? savedSettings.showCamera : false
+  )
+  const cameraOpacity = ref<number>(
+    savedSettings.cameraOpacity !== undefined ? savedSettings.cameraOpacity : 0.5
+  )
   const isFullscreen = ref(false)
+  const isSideMenuOpen = ref(false)
   const debugInfoValue = reactive<Array<{ key: string; value: string | undefined }>>([])
   const devices = ref({
     midi: {
@@ -77,8 +84,14 @@ export const useAppStore = defineStore('appStore', () => {
   const musicalConfig = ref({
     tonic: savedSettings.musicalConfig?.tonic || 'A',
     scaleName: savedSettings.musicalConfig?.scaleName || 'minor pentatonic',
-    baseOctave: savedSettings.musicalConfig?.baseOctave !== undefined ? savedSettings.musicalConfig.baseOctave : 3,
-    octaveRange: savedSettings.musicalConfig?.octaveRange !== undefined ? savedSettings.musicalConfig.octaveRange : 3,
+    baseOctave:
+      savedSettings.musicalConfig?.baseOctave !== undefined
+        ? savedSettings.musicalConfig.baseOctave
+        : 3,
+    octaveRange:
+      savedSettings.musicalConfig?.octaveRange !== undefined
+        ? savedSettings.musicalConfig.octaveRange
+        : 3,
     availableScales: AVAILABLE_SCALES,
     availableTonics: CHROMATIC_NOTES
   })
@@ -247,6 +260,14 @@ export const useAppStore = defineStore('appStore', () => {
   const setFullscreen = (v: boolean) => {
     isFullscreen.value = v
   }
+  /** @description Alterna a visibilidade do sidemenu de configurações. */
+  const toggleSideMenu = () => {
+    isSideMenuOpen.value = !isSideMenuOpen.value
+  }
+  /** @description Fecha o sidemenu de configurações. */
+  const closeSideMenu = () => {
+    isSideMenuOpen.value = false
+  }
   /** @description Adiciona ou atualiza uma informação de debug. */
   const addDebugInfo = (key: string, value: string | undefined) => {
     const index = debugInfoValue.findIndex(item => item.key === key)
@@ -273,7 +294,7 @@ export const useAppStore = defineStore('appStore', () => {
       selectedMidiOutput: devices.value.midi.selectedMidiOutput,
       selectedCamera: devices.value.webcam.selectedCamera
     }),
-    (newSettings) => {
+    newSettings => {
       if (typeof window !== 'undefined' && window.localStorage) {
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings))
@@ -296,6 +317,7 @@ export const useAppStore = defineStore('appStore', () => {
     showCamera,
     cameraOpacity,
     isFullscreen,
+    isSideMenuOpen,
     devices,
     musicalConfig,
     systemLogs,
@@ -322,6 +344,8 @@ export const useAppStore = defineStore('appStore', () => {
     toggleCamera,
     setCameraOpacity,
     setFullscreen,
+    toggleSideMenu,
+    closeSideMenu,
     addDebugInfo,
     setAudioMode,
     setPoeticMode

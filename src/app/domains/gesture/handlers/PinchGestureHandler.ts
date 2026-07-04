@@ -53,8 +53,12 @@ export class PinchGestureHandler extends BaseGestureHandler {
       if (this.lastSmoothedPosition) {
         const alpha = 0.35 // Baixa latência, ótima suavização
         smoothedPos = {
-          x: this.lastSmoothedPosition.x + alpha * (pinchData.position.x - this.lastSmoothedPosition.x),
-          y: this.lastSmoothedPosition.y + alpha * (pinchData.position.y - this.lastSmoothedPosition.y)
+          x:
+            this.lastSmoothedPosition.x +
+            alpha * (pinchData.position.x - this.lastSmoothedPosition.x),
+          y:
+            this.lastSmoothedPosition.y +
+            alpha * (pinchData.position.y - this.lastSmoothedPosition.y)
         }
       }
       this.lastSmoothedPosition = smoothedPos
@@ -64,8 +68,22 @@ export class PinchGestureHandler extends BaseGestureHandler {
       // pinchData.intensity goes from 0 (open) to 1 (closed)
       // Reverse it for Reverb: 0 (closed) to 1 (open)
       this.midiService.sendCC(100, (1 - pinchData.intensity) * this.midiConfig.maxValue)
+
+      // Vibrato/modulation incremental quando a mão da pinça chega próximo ao topo (y < 0.15)
+      const vibratoLimitY = 0.15
+      const isTone = this.midiService.constructor.name === 'ToneService'
+      const targetCC = isTone ? 11 : 1
+      if (smoothedPos.y < vibratoLimitY) {
+        const vibratoVal = (vibratoLimitY - smoothedPos.y) / vibratoLimitY
+        const clampedVal = Math.min(1, Math.max(0, vibratoVal))
+        this.midiService.sendCC(targetCC, clampedVal * this.midiConfig.maxValue)
+      } else {
+        this.midiService.sendCC(targetCC, 0)
+      }
     } else {
       this.lastSmoothedPosition = null
+      const isTone = this.midiService.constructor.name === 'ToneService'
+      this.midiService.sendCC(isTone ? 11 : 1, 0)
     }
 
     if (isActive && !wasActive) {
@@ -128,6 +146,9 @@ export class PinchGestureHandler extends BaseGestureHandler {
     this.pinchState.currentNote = null
     this.pinchState.currentNoteValue = null
     this.midiService.stopAllNotes()
+
+    const isTone = this.midiService.constructor.name === 'ToneService'
+    this.midiService.sendCC(isTone ? 11 : 1, 0)
   }
 
   /** @description Obtém a nota MIDI atual com base na posição do gesto. */

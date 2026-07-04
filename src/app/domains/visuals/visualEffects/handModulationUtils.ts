@@ -52,7 +52,7 @@ export function createHandModulationEffect(
   } else if (mode === 'constellation') {
     multiplier *= 0.4
   }
-  
+
   const baseParticleCount = Math.floor(options.intensity * multiplier)
 
   const particleCount = Math.min(

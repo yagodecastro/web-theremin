@@ -1,6 +1,6 @@
 <template>
   <footer
-    class="mt-4 flex flex-col items-center pb-4 text-center text-xs text-retro-gray-400 font-mono space-y-1"
+    class="mt-4 flex flex-col items-center pb-4 text-center text-xs text-slate-400 font-mono space-y-1"
   >
     <p>Trabalho de Conclusão de Curso — MBA em Engenharia de Software · USP · 2026</p>
     <span class="flex gap-3">
