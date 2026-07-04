@@ -1,6 +1,6 @@
 {
-  "name": "theremin-gestual",
-  "version": "1.0.0",
+  "name": "web-theremin",
+  "version": "1.1.0",
   "description": "Aplicação web de rastreamento gestual para geração de MIDI e feedback visual em tempo real",
   "license": "MIT",
   "type": "module",
