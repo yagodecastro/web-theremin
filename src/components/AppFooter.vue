@@ -4,7 +4,7 @@
   >
     <p>Trabalho de Conclusão de Curso — MBA em Engenharia de Software · USP · 2026</p>
     <span class="flex gap-3">
-      <a href="https://doi.org/10.5281/zenodo.20184763"
+      <a href="https://doi.org/10.5281/zenodo.20184763" target="_blank"
         ><img alt="DOI" src="https://zenodo.org/badge/1062915118.svg"
       /></a>
       <a
